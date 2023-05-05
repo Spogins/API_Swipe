@@ -1,3 +1,7 @@
 from django.db import models
 
-# Create your models here.
+
+class Announcement(models.Model):
+    confirm = models.BooleanField(default=True)
+    date = models.DateField(auto_now_add=True)
+

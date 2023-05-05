@@ -1,6 +1,7 @@
 from django.core.validators import MinValueValidator
 from django.db import models
 
+from announcements.models import Announcement
 from files.models import Gallery
 from users.models import User
 
@@ -83,3 +84,50 @@ class Complex(models.Model):
 
     user = models.ForeignKey(User, on_delete=models.PROTECT)
     gallery = models.ForeignKey(Gallery, on_delete=models.PROTECT)
+
+
+class Section(models.Model):
+    name = models.CharField(max_length=100)
+    residential_complex = models.ForeignKey(Complex, on_delete=models.PROTECT)
+
+
+class Corps(models.Model):
+    name = models.CharField(max_length=100)
+    residential_complex = models.ForeignKey(Complex, on_delete=models.PROTECT)
+
+
+class Floor(models.Model):
+    name = models.CharField(max_length=100)
+    residential_complex = models.ForeignKey(Complex, on_delete=models.PROTECT)
+
+
+class Flat(models.Model):
+    room_amount = models.IntegerField()
+    scheme = models.ImageField(upload_to='flat/scheme/')
+    price = models.FloatField(validators=[MinValueValidator(1.00)])
+    square = models.IntegerField()
+    kitchen_square = models.IntegerField()
+    balcony = models.BooleanField(default=False)
+    commission = models.IntegerField()
+    district = models.CharField(max_length=200)
+    micro_district = models.CharField(max_length=200)
+
+    class LivingConditionsChoice(models.TextChoices):
+        draft = ('draft', 'Черновая')
+        repair_required = ('repair', 'Нужен ремонт')
+        good = ('good', 'В жилом состоянии')
+
+    class PlanningChoice(models.TextChoices):
+        studio_bathroom = ('studio-bathroom', 'Студия санузел')
+        studio = ('studio', 'Студия')
+
+    living_condition = models.CharField(max_length=50, choices=LivingConditionsChoice.choices)
+    planning = models.CharField(max_length=50, choices=PlanningChoice.choices)
+    residential_complex = models.ForeignKey(Complex, on_delete=models.PROTECT)
+    section = models.ForeignKey(Section, on_delete=models.PROTECT)
+    corps = models.ForeignKey(Corps, on_delete=models.PROTECT)
+    floor = models.ForeignKey(Floor, on_delete=models.PROTECT)
+    user = models.ForeignKey(User, on_delete=models.PROTECT)
+    gallery = models.ForeignKey(Gallery, on_delete=models.PROTECT)
+    announcement = models.OneToOneField(Announcement, on_delete=models.CASCADE)
+
