@@ -8,3 +8,6 @@ class Gallery(models.Model):
 class Photo(models.Model):
     image = models.ImageField(upload_to='gallery/photos/')
     gallery = models.ForeignKey(Gallery, on_delete=models.CASCADE)
+
+
+

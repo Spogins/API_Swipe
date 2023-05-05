@@ -1,10 +1,8 @@
 from django.core.validators import MinValueValidator
 from django.db import models
-
-from announcements.models import Announcement
 from files.models import Gallery
 from users.models import User
-
+from announcements.models import Announcement
 
 # from users.models import User
 
@@ -130,4 +128,17 @@ class Flat(models.Model):
     user = models.ForeignKey(User, on_delete=models.PROTECT)
     gallery = models.ForeignKey(Gallery, on_delete=models.PROTECT)
     announcement = models.OneToOneField(Announcement, on_delete=models.CASCADE)
+
+
+class ChessBoard(models.Model):
+    residential_complex = models.ForeignKey(Complex, on_delete=models.PROTECT)
+    section = models.ForeignKey(Section, on_delete=models.PROTECT)
+    corps = models.ForeignKey(Corps, on_delete=models.PROTECT)
+    date = models.DateField(auto_now_add=True)
+
+
+class Documents(models.Model):
+    name = models.CharField(max_length=30)
+    document = models.FileField()
+    residential_complex = models.ForeignKey(Complex, on_delete=models.PROTECT)
 
