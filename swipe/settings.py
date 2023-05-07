@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'dj_rest_auth',
+    'dj_rest_auth.registration',
     "debug_toolbar",
     'drf_spectacular',
     'rest_framework_simplejwt',
@@ -49,6 +50,9 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'phonenumber_field',
+    'drf_psq',
+    'django_filters',
+
     # APP
     'residential.apps.ResidentialConfig',
     'users.apps.UsersConfig',
@@ -83,7 +87,7 @@ SIMPLE_JWT = {
     "JWK_URL": None,
     "LEEWAY": 0,
 
-    "AUTH_HEADER_TYPES": ("Bearer",),
+    "AUTH_HEADER_TYPES": ("JWT",),
     "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
     "USER_ID_FIELD": "id",
     "USER_ID_CLAIM": "user_id",
@@ -109,14 +113,25 @@ SIMPLE_JWT = {
 
 REST_AUTH = {
     'SESSION_LOGIN': False,
-    'LOGIN_SERIALIZER': 'users.serializers.AuthLoginSerializer',
-    'REGISTER_SERIALIZER': 'users.serializers.AuthRegistrationSerializer',
-    'PASSWORD_CHANGE_SERIALIZER': 'users.serializers.AuthPasswordChangeSerializer',
+    'LOGIN_SERIALIZER': 'users.serializers.UserLoginSerializer',
+    'REGISTER_SERIALIZER': 'users.serializers.UserRegistrationSerializer',
+    'PASSWORD_CHANGE_SERIALIZER': 'users.serializers.UserPasswordChangeSerializer',
     'USE_JWT': True,
     'JWT_AUTH_COOKIE': 'access_token',
     'JWT_AUTH_HTTPONLY': False,
     'JWT_AUTH_REFRESH_COOKIE': 'refresh_token',
 }
+
+ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = False
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
+ACCOUNT_CONFIRM_EMAIL_ON_GET = True
+ACCOUNT_USER_MODEL_USERNAME_FIELD = 'email'
+ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = 'confirm_congratulations'
+ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = 'confirm_congratulations'
+ACCOUNT_EMAIL_SUBJECT_PREFIX = 'API Swipe. '
 
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
@@ -125,7 +140,12 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_PERMISSION_CLASSES': [
        'rest_framework.permissions.AllowAny',
-    ]
+    ],
+    'DEFAULT_FILTER_BACKENDS': (
+        'django_filters.rest_framework.DjangoFilterBackend',
+    ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'PAGE_SIZE': 20
 
 }
 
@@ -145,12 +165,20 @@ MIDDLEWARE = [
     "debug_toolbar.middleware.DebugToolbarMiddleware",
 ]
 
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_USE_TLS = True
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'spogins@gmail.com'
+EMAIL_HOST_PASSWORD = "kbuvrkluwnasnzqs"
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
 ROOT_URLCONF = 'swipe.urls'
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

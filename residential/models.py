@@ -142,3 +142,9 @@ class Documents(models.Model):
     document = models.FileField()
     residential_complex = models.ForeignKey(Complex, on_delete=models.PROTECT)
 
+
+class Favorites(models.Model):
+    announcement = models.ForeignKey(Announcement, on_delete=models.PROTECT)
+    residential_complex = models.ForeignKey(Complex, on_delete=models.PROTECT)
+    user = models.ForeignKey(User, on_delete=models.PROTECT)
+
