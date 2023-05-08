@@ -17,7 +17,7 @@ class Role(models.Model):
 
 class User(AbstractUser):
     role = models.ForeignKey(Role, on_delete=models.PROTECT, blank=True, null=True)
-    phone = PhoneNumberField(blank=True, null=True)
+    phone = models.IntegerField(null=True, blank=True)
     avatar = models.ImageField(upload_to='users/avatar/', blank=True, null=True)
     black_list = models.BooleanField(blank=True, null=True, default=False)
     turn_to_agent = models.BooleanField(blank=True, null=True, default=False)

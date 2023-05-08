@@ -1,13 +1,10 @@
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
-from django.utils.translation import gettext_lazy as _
-
 from files.models import Gallery, Photo
 from files.serializers import PhotoSerializer
 from residential.models import Complex
-from users.models import User
 from users.serializers import AuthUserSerializer
+from django.utils.translation import gettext_lazy as _
 
 
 class ResidentialListSerializer(serializers.ModelSerializer):
@@ -62,7 +59,6 @@ class ResidentialSerializer(serializers.ModelSerializer):
                     gallery=instance.gallery
                 )
                 photo.save()
-
 
         return instance
 
