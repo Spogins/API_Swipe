@@ -1,8 +1,10 @@
 from drf_extra_fields.fields import Base64ImageField
-from rest_framework import serializers
+from rest_framework import serializers, status
+from rest_framework.exceptions import ValidationError
+
 from files.models import Gallery, Photo
 from files.serializers import PhotoSerializer
-from residential.models import Complex
+from residential.models import *
 from users.serializers import AuthUserSerializer
 from django.utils.translation import gettext_lazy as _
 
@@ -25,11 +27,14 @@ class ResidentialSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         gallery = validated_data.pop('photo_gallery', None)
-        res_complex = Complex.objects.create(
-            user=self.context['request'].user,
-            gallery=Gallery.objects.create(name='residential_complex'),
-            **validated_data
-        )
+        if not Complex.objects.filter(user=self.context['request'].user):
+            res_complex = Complex.objects.create(
+                user=self.context['request'].user,
+                gallery=Gallery.objects.create(name='residential_complex'),
+                **validated_data
+            )
+        else:
+            raise ValidationError(detail={'data': _('user have residential_complex')}, code=status.HTTP_400_BAD_REQUEST)
 
         if gallery:
             for elem in gallery:
@@ -70,6 +75,26 @@ class ResidentialSerializer(serializers.ModelSerializer):
             }
         )
         return data
+
+
+class SectionApiSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Section
+        fields = '__all__'
+
+
+class CorpsApiSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Corps
+        fields = '__all__'
+
+
+class FloorApiSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Floor
+        fields = '__all__'
+
+
 
 
 

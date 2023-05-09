@@ -5,10 +5,9 @@ from drf_psq import PsqMixin, Rule
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, permissions, response, status
 from rest_framework.decorators import action
-
-from users.models import User
-from users.serializers import BuilderRegistrationSerializer, UserApiSerializer, UserAdminApiSerializer, \
-    AuthUserSerializer
+from users.models import User, Notary
+from users.serializers import BuilderRegistrationSerializer, UserAdminApiSerializer, UserApiSerializer, \
+    NotaryApiSerializer
 
 
 class ConfirmCongratulationView(TemplateResponseMixin, View):
@@ -22,7 +21,7 @@ class BuilderRegisterView(RegisterView):
     serializer_class = BuilderRegistrationSerializer
 
 
-@extend_schema(tags=['User'], )
+@extend_schema(tags=['User'])
 class UserApiView(PsqMixin, viewsets.ModelViewSet):
     serializer_class = UserApiSerializer
     http_method_names = ['get', 'post', 'patch', 'delete']
@@ -46,6 +45,25 @@ class UserApiView(PsqMixin, viewsets.ModelViewSet):
     @action(methods=['GET'], detail=False, url_path='profile')
     def profile_usr(self, request, *args, **kwargs):
         obj = self.profile_obj()
-        serializer = AuthUserSerializer(instance=obj)
+        serializer = self.get_serializer(instance=obj)
         return response.Response(data=serializer.data, status=status.HTTP_200_OK)
+
+    @action(methods=['PATCH'], detail=False, url_path='profile/update')
+    def profile_update(self, request, *args, **kwargs):
+        obj = self.profile_obj()
+        serializer = self.get_serializer(data=request.data, instance=obj, partial=True, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return response.Response(data=serializer.data, status=status.HTTP_200_OK)
+        else:
+            return response.Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(tags=['Notary'])
+class NotaryView(PsqMixin, viewsets.ModelViewSet):
+    serializer_class = NotaryApiSerializer
+    http_method_names = ['get', 'post', 'patch', 'delete']
+    permission_classes = [permissions.AllowAny]
+    queryset = Notary.objects.all()
+
 
