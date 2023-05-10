@@ -95,6 +95,12 @@ class FloorApiSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class DocumentApiSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Documents
+        fields = '__all__'
+
+
 
 
 

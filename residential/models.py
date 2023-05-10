@@ -139,7 +139,7 @@ class ChessBoard(models.Model):
 
 class Documents(models.Model):
     name = models.CharField(max_length=30)
-    document = models.FileField()
+    document = models.FileField(upload_to='documents/')
     residential_complex = models.ForeignKey(Complex, on_delete=models.PROTECT)
 
 

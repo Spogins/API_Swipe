@@ -81,3 +81,11 @@ class FloorView(PsqMixin, viewsets.ModelViewSet):
     permission_classes = [permissions.AllowAny]
     queryset = Floor.objects.all()
 
+
+@extend_schema(tags=['Documents'])
+class DocumentView(PsqMixin, viewsets.ModelViewSet):
+    serializer_class = DocumentApiSerializer
+    http_method_names = ['get', 'post', 'patch', 'delete']
+    permission_classes = [permissions.AllowAny]
+    queryset = Documents.objects.all()
+
