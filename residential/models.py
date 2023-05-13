@@ -2,7 +2,7 @@ from django.core.validators import MinValueValidator
 from django.db import models
 from files.models import Gallery
 from users.models import User
-from announcements.models import Announcement
+
 
 # from users.models import User
 
@@ -127,7 +127,6 @@ class Flat(models.Model):
     floor = models.ForeignKey(Floor, on_delete=models.PROTECT)
     user = models.ForeignKey(User, on_delete=models.PROTECT)
     gallery = models.ForeignKey(Gallery, on_delete=models.PROTECT)
-    announcement = models.OneToOneField(Announcement, on_delete=models.CASCADE)
 
 
 class ChessBoard(models.Model):
@@ -135,6 +134,8 @@ class ChessBoard(models.Model):
     section = models.ForeignKey(Section, on_delete=models.PROTECT)
     corps = models.ForeignKey(Corps, on_delete=models.PROTECT)
     date = models.DateField(auto_now_add=True)
+    flat = models.ManyToManyField(Flat)
+
 
 
 class Documents(models.Model):
@@ -143,8 +144,8 @@ class Documents(models.Model):
     residential_complex = models.ForeignKey(Complex, on_delete=models.PROTECT)
 
 
-class Favorites(models.Model):
-    announcement = models.ForeignKey(Announcement, on_delete=models.PROTECT)
+class News(models.Model):
+    title = models.CharField(max_length=30)
+    text = models.TextField()
+    date = models.DateField(auto_now_add=True)
     residential_complex = models.ForeignKey(Complex, on_delete=models.PROTECT)
-    user = models.ForeignKey(User, on_delete=models.PROTECT)
-

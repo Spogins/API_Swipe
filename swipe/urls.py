@@ -53,6 +53,7 @@ urlpatterns = [
     # URLS APP
     path('api/v1/', include('residential.urls')),
     path('api/v1/', include('users.urls')),
+    path('api/v1/', include('announcements.urls')),
 
 ]
 

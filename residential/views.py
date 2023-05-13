@@ -1,4 +1,4 @@
-
+from django.utils.translation import gettext_lazy as _
 from django.shortcuts import render
 from drf_psq import PsqMixin
 from drf_spectacular.utils import extend_schema
@@ -27,10 +27,10 @@ class ResidentialComplexSet(viewsets.ModelViewSet):
             obj = Complex.objects \
                 .prefetch_related('gallery__photo_set') \
                 .select_related('user') \
-                .get(user=self.request.user)
+                .get(user_id=self.request.user.id)
             return obj
         except:
-            return response.Response(data={'data': 'something go wrong'}, status=status.HTTP_400_BAD_REQUEST)
+            return response.Response(data={'data': 'на застройщика не зарегистрирован ЖК'}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(methods=['GET'], detail=False, url_path='user')
     def res_user(self, request, *args, **kwargs):
@@ -42,6 +42,7 @@ class ResidentialComplexSet(viewsets.ModelViewSet):
     def update_res_user(self, request, *args, **kwargs):
         obj = self.user_object()
         serializer = self.get_serializer(data=request.data, instance=obj, partial=True, context={'request': request})
+
         if serializer.is_valid():
             serializer.save()
             return response.Response(data=serializer.data, status=status.HTTP_200_OK)
@@ -50,36 +51,160 @@ class ResidentialComplexSet(viewsets.ModelViewSet):
 
     @action(methods=['DELETE'], detail=False, url_path='user/delete')
     def delete_res_user(self, request, *args, **kwargs):
-        try:
-            obj = self.user_object()
-            obj.delete()
-            return response.Response(data={'response': 'ЖК удалён'}, status=status.HTTP_200_OK)
-        except:
-            return response.Response(data={'response': 'что то пошло не так'}, status=status.HTTP_400_BAD_REQUEST)
+        obj = self.user_object()
+        print(obj, 5555555555555)
+        obj.delete()
+        return response.Response(data={'response': 'ЖК удалён'}, status=status.HTTP_200_OK)
+
+
 
 
 @extend_schema(tags=['Section'])
-class SectionView(PsqMixin, viewsets.ModelViewSet):
+class SectionView(PsqMixin, generics.ListAPIView, generics.DestroyAPIView, viewsets.GenericViewSet):
     serializer_class = SectionApiSerializer
     http_method_names = ['get', 'post', 'patch', 'delete']
     permission_classes = [permissions.AllowAny]
-    queryset = Section.objects.all()
+
+    def get_object(self, *args, **kwargs):
+        try:
+            return Section.objects.get(pk=self.kwargs.get(self.lookup_field))
+        except Section.DoesNotExist:
+            raise ValidationError({'detail': _('Указаный Section не сужествует')})
+
+    def get_queryset(self):
+        queryset = Section.objects.all()
+        return queryset
+
+    def get_residential_complex(self):
+        try:
+            return Complex.objects.get(user=self.request.user)
+        except:
+            raise ValidationError({'detail': _('ЖК не зарегестрирован')})
+
+    def retrieve(self, request, *args, **kwargs):
+        obj = self.get_object()
+        serializer = self.get_serializer(instance=obj)
+        return response.Response(data=serializer.data, status=status.HTTP_200_OK)
+
+    @action(methods=['GET'], detail=False, url_path='user')
+    def corps(self, request, *args, **kwargs):
+        obj = self.get_queryset().filter(residential_complex__user=request.user)
+        serializer = self.get_serializer(instance=obj, many=True)
+        return self.get_paginated_response(data=serializer.data)
+
+    @action(methods=['POST'], detail=False, url_path='user/create')
+    def create_corps(self, request, *args, **kwargs):
+        residential_complex = self.get_residential_complex()
+        serializer = self.get_serializer(data=request.data,
+                                         context={'residential_complex': residential_complex, 'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return response.Response(data=serializer.data, status=status.HTTP_201_CREATED)
+        return response.Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['DELETE'], detail=True, url_path='user/delete')
+    def delete_flat_user(self, request, *args, **kwargs):
+        obj = self.get_queryset().filter(residential_complex__user=request.user)
+        obj.delete()
+        return response.Response(data={'response': 'Obj удалён'}, status=status.HTTP_200_OK)
 
 
 @extend_schema(tags=['Corps'])
-class CorpsView(PsqMixin, viewsets.ModelViewSet):
+class CorpsView(PsqMixin, generics.ListAPIView, generics.DestroyAPIView, viewsets.GenericViewSet):
     serializer_class = CorpsApiSerializer
     http_method_names = ['get', 'post', 'patch', 'delete']
     permission_classes = [permissions.AllowAny]
-    queryset = Corps.objects.all()
+
+    def get_object(self, *args, **kwargs):
+        try:
+            return Corps.objects.get(pk=self.kwargs.get(self.lookup_field))
+        except Corps.DoesNotExist:
+            raise ValidationError({'detail': _('Указаный corps не сужествует')})
+
+    def get_queryset(self):
+        queryset = Corps.objects.all()
+        return queryset
+
+    def get_residential_complex(self):
+        try:
+            return Complex.objects.get(user=self.request.user)
+        except:
+            raise ValidationError({'detail': _('ЖК не зарегестрирован')})
+
+    def retrieve(self, request, *args, **kwargs):
+        obj = self.get_object()
+        serializer = self.get_serializer(instance=obj)
+        return response.Response(data=serializer.data, status=status.HTTP_200_OK)
+
+    @action(methods=['GET'], detail=False, url_path='user')
+    def corps(self, request, *args, **kwargs):
+        obj = self.get_queryset().filter(residential_complex__user=request.user)
+        serializer = self.get_serializer(instance=obj, many=True)
+        return self.get_paginated_response(data=serializer.data)
+
+    @action(methods=['POST'], detail=False, url_path='user/create')
+    def create_corps(self, request, *args, **kwargs):
+        residential_complex = self.get_residential_complex()
+        serializer = self.get_serializer(data=request.data,
+                                         context={'residential_complex': residential_complex, 'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return response.Response(data=serializer.data, status=status.HTTP_201_CREATED)
+        return response.Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['DELETE'], detail=True, url_path='user/delete')
+    def delete_flat_user(self, request, *args, **kwargs):
+        obj = self.get_queryset().filter(residential_complex__user=request.user)
+        obj.delete()
+        return response.Response(data={'response': 'Obj удалён'}, status=status.HTTP_200_OK)
 
 
 @extend_schema(tags=['Floor'])
-class FloorView(PsqMixin, viewsets.ModelViewSet):
+class FloorView(PsqMixin, generics.ListAPIView, generics.DestroyAPIView, viewsets.GenericViewSet):
     serializer_class = FloorApiSerializer
-    http_method_names = ['get', 'post', 'patch', 'delete']
     permission_classes = [permissions.AllowAny]
-    queryset = Floor.objects.all()
+
+    def get_object(self, *args, **kwargs):
+        try:
+            return Floor.objects.get(pk=self.kwargs.get(self.lookup_field))
+        except Floor.DoesNotExist:
+            raise ValidationError({'detail': _('Указаный этаж не сужествует')})
+
+    def get_queryset(self):
+        queryset = Floor.objects.all()
+        return queryset
+
+    def get_residential_complex(self):
+        try:
+            return Complex.objects.get(user=self.request.user)
+        except:
+            raise ValidationError({'detail': _('ЖК не зарегестрирован')})
+
+    def retrieve(self, request, *args, **kwargs):
+        obj = self.get_object()
+        serializer = self.get_serializer(instance=obj)
+        return response.Response(data=serializer.data, status=status.HTTP_200_OK)
+
+    @action(methods=['GET'], detail=False, url_path='user')
+    def corps(self, request, *args, **kwargs):
+        obj = self.get_queryset().filter(residential_complex__user=request.user)
+        serializer = self.get_serializer(instance=obj, many=True)
+        return self.get_paginated_response(data=serializer.data)
+
+    @action(methods=['POST'], detail=False, url_path='user/create')
+    def create_corps(self, request, *args, **kwargs):
+        residential_complex = self.get_residential_complex()
+        serializer = self.get_serializer(data=request.data, context={'residential_complex': residential_complex, 'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return response.Response(data=serializer.data, status=status.HTTP_201_CREATED)
+        return response.Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['DELETE'], detail=True, url_path='user/delete')
+    def delete_flat_user(self, request, *args, **kwargs):
+        obj = self.get_queryset().filter(residential_complex__user=request.user)
+        obj.delete()
+        return response.Response(data={'response': 'Obj удалён'}, status=status.HTTP_200_OK)
 
 
 @extend_schema(tags=['Documents'])
@@ -89,3 +214,129 @@ class DocumentView(PsqMixin, viewsets.ModelViewSet):
     permission_classes = [permissions.AllowAny]
     queryset = Documents.objects.all()
 
+
+
+
+@extend_schema(tags=['News'])
+class NewsView(PsqMixin, viewsets.ModelViewSet):
+    serializer_class = NewsApiSerializer
+    http_method_names = ['get', 'post', 'patch', 'delete']
+    permission_classes = [permissions.AllowAny]
+    queryset = News.objects.all()
+
+
+@extend_schema(tags=['Flats'])
+class FlatView(PsqMixin, viewsets.ModelViewSet):
+    serializer_class = FlatApiSerializer
+    http_method_names = ['get', 'post', 'patch', 'delete']
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        queryset = Flat.objects \
+            .prefetch_related('gallery__photo_set') \
+            .select_related('corps', 'section', 'floor', 'residential_complex', 'gallery') \
+            .all()
+        return queryset
+
+    def get_user_obj(self):
+        queryset = Flat.objects.filter(residential_complex__user=self.request.user)
+        return queryset
+
+    def get_residential_complex(self):
+        try:
+            return Complex.objects.get(user=self.request.user)
+        except:
+            raise ValidationError({'detail': _('ЖК не зарегестрирован')})
+
+    @action(methods=['GET'], detail=False, url_path='user')
+    def flat_user(self, request, *args, **kwargs):
+        obj = self.get_user_obj()
+        serializer = self.get_serializer(instance=obj, many=True)
+        return response.Response(data=serializer.data, status=status.HTTP_200_OK)
+
+    @action(methods=['POST'], detail=True, url_path='user/create')
+    def create_flat_user(self, request, *args, **kwargs):
+        residential_complex = self.get_residential_complex()
+        serializer = self.get_serializer(data=request.data, context={'residential_complex': residential_complex, 'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return response.Response(data=serializer.data, status=status.HTTP_201_CREATED)
+        return response.Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['PATCH'], detail=True, url_path='user/update')
+    def update_flat_user(self, request, *args, **kwargs):
+        obj = self.get_user_obj()
+        serializer = self.get_serializer(data=request.data, instance=obj, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return response.Response(data=serializer.data, status=status.HTTP_200_OK)
+        else:
+            return response.Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['DELETE'], detail=True, url_path='user/delete')
+    def delete_flat_user(self, request, *args, **kwargs):
+        obj = self.get_user_obj()
+        obj.delete()
+        return response.Response(data={'response': 'Obj удалён'}, status=status.HTTP_200_OK)
+
+
+@extend_schema(tags=['ChessBoard'])
+class ChessBoardView(PsqMixin, generics.DestroyAPIView, viewsets.GenericViewSet):
+    serializer_class = ChessBoardApiSerializer
+    # http_method_names = ['get', 'patch', 'post', 'delete']
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        queryset = ChessBoard.objects \
+            .select_related('corps', 'section', 'residential_complex') \
+            .all()
+        return queryset
+
+    def get_residential_complex(self):
+        try:
+            return Complex.objects.get(user=self.request.user)
+        except:
+            raise ValidationError({'detail': _('ЖК не зарегестрирован')})
+
+    def get_user_obj(self):
+        queryset = ChessBoard.objects.filter(residential_complex__user=self.request.user)
+        return queryset
+
+    @action(methods=['GET'], detail=False, url_path='list')
+    def chessboard_list(self, request, *args, **kwargs):
+        obj = self.get_queryset()
+        serializer = self.get_serializer(instance=obj, many=True)
+        return response.Response(data=serializer.data, status=status.HTTP_200_OK)
+
+    @action(methods=['GET'], detail=False, url_path='user')
+    def chessboard_user(self, request, *args, **kwargs):
+        obj = self.get_user_obj()
+        serializer = self.get_serializer(instance=obj, many=True)
+        return response.Response(data=serializer.data, status=status.HTTP_200_OK)
+
+    @action(methods=['POST'], detail=False, url_path='user/create')
+    def create_chessboard_user(self, request, *args, **kwargs):
+        residential_complex = self.get_residential_complex()
+        serializer = self.get_serializer(data=request.data, context={'residential_complex': residential_complex, 'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return response.Response(data=serializer.data, status=status.HTTP_201_CREATED)
+        return response.Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['PATCH'], detail=False, url_path='user/update')
+    def update_chessboard_user(self, request, *args, **kwargs):
+        obj = self.get_user_obj()
+        serializer = self.get_serializer(data=request.data, instance=obj, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return response.Response(data=serializer.data, status=status.HTTP_200_OK)
+        else:
+            return response.Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['DELETE'], detail=False, url_path='user/delete')
+    def delete_chessboard_user(self, request, *args, **kwargs):
+        obj = self.get_user_obj()
+        obj.delete()
+        return response.Response(data={'response': 'Obj удалён'}, status=status.HTTP_200_OK)
