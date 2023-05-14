@@ -7,7 +7,7 @@ from rest_framework.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
 from users.forms import CustomSetPasswordForm
-from users.models import User, Role, Notary
+from users.models import User, Role, Notary, Messages
 
 
 class UserLoginSerializer(LoginSerializer):
@@ -145,4 +145,21 @@ class NotaryApiSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notary
         fields = '__all__'
+
+
+class MessageApiSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Messages
+        fields = ['text', 'recipient']
+
+    def create(self, validated_data):
+        message = Messages.objects.create(
+            sender=self.context.get('user'),
+            **validated_data
+        )
+        return message
+
+
+
+
 

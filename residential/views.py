@@ -52,7 +52,6 @@ class ResidentialComplexSet(viewsets.ModelViewSet):
     @action(methods=['DELETE'], detail=False, url_path='user/delete')
     def delete_res_user(self, request, *args, **kwargs):
         obj = self.user_object()
-        print(obj, 5555555555555)
         obj.delete()
         return response.Response(data={'response': 'ЖК удалён'}, status=status.HTTP_200_OK)
 
@@ -87,13 +86,13 @@ class SectionView(PsqMixin, generics.ListAPIView, generics.DestroyAPIView, views
         return response.Response(data=serializer.data, status=status.HTTP_200_OK)
 
     @action(methods=['GET'], detail=False, url_path='user')
-    def corps(self, request, *args, **kwargs):
-        obj = self.get_queryset().filter(residential_complex__user=request.user)
+    def section(self, request, *args, **kwargs):
+        obj = self.paginate_queryset(self.get_queryset().filter(residential_complex__user=request.user))
         serializer = self.get_serializer(instance=obj, many=True)
         return self.get_paginated_response(data=serializer.data)
 
     @action(methods=['POST'], detail=False, url_path='user/create')
-    def create_corps(self, request, *args, **kwargs):
+    def create_section(self, request, *args, **kwargs):
         residential_complex = self.get_residential_complex()
         serializer = self.get_serializer(data=request.data,
                                          context={'residential_complex': residential_complex, 'request': request})
@@ -103,7 +102,7 @@ class SectionView(PsqMixin, generics.ListAPIView, generics.DestroyAPIView, views
         return response.Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(methods=['DELETE'], detail=True, url_path='user/delete')
-    def delete_flat_user(self, request, *args, **kwargs):
+    def delete_section(self, request, *args, **kwargs):
         obj = self.get_queryset().filter(residential_complex__user=request.user)
         obj.delete()
         return response.Response(data={'response': 'Obj удалён'}, status=status.HTTP_200_OK)
@@ -138,7 +137,7 @@ class CorpsView(PsqMixin, generics.ListAPIView, generics.DestroyAPIView, viewset
 
     @action(methods=['GET'], detail=False, url_path='user')
     def corps(self, request, *args, **kwargs):
-        obj = self.get_queryset().filter(residential_complex__user=request.user)
+        obj = self.paginate_queryset(self.get_queryset().filter(residential_complex__user=request.user))
         serializer = self.get_serializer(instance=obj, many=True)
         return self.get_paginated_response(data=serializer.data)
 
@@ -163,7 +162,7 @@ class CorpsView(PsqMixin, generics.ListAPIView, generics.DestroyAPIView, viewset
 class FloorView(PsqMixin, generics.ListAPIView, generics.DestroyAPIView, viewsets.GenericViewSet):
     serializer_class = FloorApiSerializer
     permission_classes = [permissions.AllowAny]
-
+    
     def get_object(self, *args, **kwargs):
         try:
             return Floor.objects.get(pk=self.kwargs.get(self.lookup_field))
@@ -186,13 +185,13 @@ class FloorView(PsqMixin, generics.ListAPIView, generics.DestroyAPIView, viewset
         return response.Response(data=serializer.data, status=status.HTTP_200_OK)
 
     @action(methods=['GET'], detail=False, url_path='user')
-    def corps(self, request, *args, **kwargs):
-        obj = self.get_queryset().filter(residential_complex__user=request.user)
+    def floor(self, request, *args, **kwargs):
+        obj = self.paginate_queryset(self.get_queryset().filter(residential_complex__user=request.user))
         serializer = self.get_serializer(instance=obj, many=True)
         return self.get_paginated_response(data=serializer.data)
 
     @action(methods=['POST'], detail=False, url_path='user/create')
-    def create_corps(self, request, *args, **kwargs):
+    def create_floor(self, request, *args, **kwargs):
         residential_complex = self.get_residential_complex()
         serializer = self.get_serializer(data=request.data, context={'residential_complex': residential_complex, 'request': request})
         if serializer.is_valid():
@@ -201,7 +200,7 @@ class FloorView(PsqMixin, generics.ListAPIView, generics.DestroyAPIView, viewset
         return response.Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(methods=['DELETE'], detail=True, url_path='user/delete')
-    def delete_flat_user(self, request, *args, **kwargs):
+    def delete_floor(self, request, *args, **kwargs):
         obj = self.get_queryset().filter(residential_complex__user=request.user)
         obj.delete()
         return response.Response(data={'response': 'Obj удалён'}, status=status.HTTP_200_OK)
@@ -250,11 +249,11 @@ class FlatView(PsqMixin, viewsets.ModelViewSet):
 
     @action(methods=['GET'], detail=False, url_path='user')
     def flat_user(self, request, *args, **kwargs):
-        obj = self.get_user_obj()
+        obj = self.paginate_queryset(self.get_user_obj())
         serializer = self.get_serializer(instance=obj, many=True)
-        return response.Response(data=serializer.data, status=status.HTTP_200_OK)
+        return self.get_paginated_response(data=serializer.data)
 
-    @action(methods=['POST'], detail=True, url_path='user/create')
+    @action(methods=['POST'], detail=False, url_path='user/create')
     def create_flat_user(self, request, *args, **kwargs):
         residential_complex = self.get_residential_complex()
         serializer = self.get_serializer(data=request.data, context={'residential_complex': residential_complex, 'request': request})
@@ -305,15 +304,15 @@ class ChessBoardView(PsqMixin, generics.DestroyAPIView, viewsets.GenericViewSet)
 
     @action(methods=['GET'], detail=False, url_path='list')
     def chessboard_list(self, request, *args, **kwargs):
-        obj = self.get_queryset()
+        obj = self.paginate_queryset(self.get_queryset())
         serializer = self.get_serializer(instance=obj, many=True)
-        return response.Response(data=serializer.data, status=status.HTTP_200_OK)
+        return self.get_paginated_response(data=serializer.data) 
 
     @action(methods=['GET'], detail=False, url_path='user')
     def chessboard_user(self, request, *args, **kwargs):
-        obj = self.get_user_obj()
+        obj = self.paginate_queryset(self.get_user_obj())
         serializer = self.get_serializer(instance=obj, many=True)
-        return response.Response(data=serializer.data, status=status.HTTP_200_OK)
+        return self.get_paginated_response(data=serializer.data)
 
     @action(methods=['POST'], detail=False, url_path='user/create')
     def create_chessboard_user(self, request, *args, **kwargs):

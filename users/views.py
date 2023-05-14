@@ -3,11 +3,13 @@ from django.views.generic.base import TemplateResponseMixin, View
 from django.utils.translation import gettext_lazy as _
 from drf_psq import PsqMixin, Rule
 from drf_spectacular.utils import extend_schema
-from rest_framework import viewsets, permissions, response, status
+from rest_framework import viewsets, permissions, response, status, generics
 from rest_framework.decorators import action
-from users.models import User, Notary
+from rest_framework.exceptions import ValidationError
+
+from users.models import User, Notary, Messages
 from users.serializers import BuilderRegistrationSerializer, UserAdminApiSerializer, UserApiSerializer, \
-    NotaryApiSerializer
+    NotaryApiSerializer, MessageApiSerializer
 
 
 class ConfirmCongratulationView(TemplateResponseMixin, View):
@@ -66,4 +68,39 @@ class NotaryView(PsqMixin, viewsets.ModelViewSet):
     permission_classes = [permissions.AllowAny]
     queryset = Notary.objects.all()
 
+
+@extend_schema(tags=['Messages'])
+class MessagesView(PsqMixin, generics.ListAPIView, generics.DestroyAPIView, viewsets.GenericViewSet):
+    serializer_class = MessageApiSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_object(self, *args, **kwargs):
+        try:
+            return Messages.objects.get(pk=self.kwargs.get(self.lookup_field))
+        except Messages.DoesNotExist:
+            raise ValidationError({'detail': _('Указаный Messages не сужествует')})
+
+    def get_queryset(self):
+        queryset = Messages.objects.all()
+        return queryset
+
+    @action(methods=['GET'], detail=False, url_path='user')
+    def messages(self, request, *args, **kwargs):
+        obj = self.paginate_queryset(self.get_queryset().filter(sender=request.user))
+        serializer = self.get_serializer(instance=obj, many=True)
+        return self.get_paginated_response(data=serializer.data)
+
+    @action(methods=['POST'], detail=False, url_path='user/create')
+    def create_messages(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data, context={'user': request.user, 'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return response.Response(data=serializer.data, status=status.HTTP_201_CREATED)
+        return response.Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['DELETE'], detail=True, url_path='user/delete')
+    def delete_messages(self, request, *args, **kwargs):
+        obj = self.get_queryset().filter(residential_complex__user=request.user)
+        obj.delete()
+        return response.Response(data={'response': 'Obj удалён'}, status=status.HTTP_200_OK)
 

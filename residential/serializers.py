@@ -132,7 +132,6 @@ class SectionFlatSerializer(serializers.ModelSerializer):
 
     def to_internal_value(self, data: int):
         try:
-            pk = data[0] if isinstance(data, list) else data
             return Section.objects.select_related('residential_complex').get(pk=data['name'])
         except Section.DoesNotExist:
             raise ValidationError({'section': _('Секция не существует')})
@@ -147,7 +146,6 @@ class CorpsFlatSerializer(serializers.ModelSerializer):
 
     def to_internal_value(self, data: int):
         try:
-            pk = data[0] if isinstance(data, list) else data
             return Corps.objects.select_related('residential_complex').get(pk=data['name'])
         except Corps.DoesNotExist:
             raise ValidationError({'corps': _('Корпус не существует')})
@@ -162,7 +160,6 @@ class FloorFlatSerializer(serializers.ModelSerializer):
 
     def to_internal_value(self, data: int):
         try:
-            pk = data[0] if isinstance(data, list) else data
             return Floor.objects.select_related('residential_complex').get(pk=data['name'])
         except Floor.DoesNotExist:
             raise ValidationError({'floor': _('Этажа не существует')})
@@ -202,7 +199,7 @@ class FlatApiSerializer(serializers.ModelSerializer):
         )
         announcement = Announcement.objects.create(confirm=True, flat=flat)
         announcement.save()
-        chess_board = ChessBoard.objects.filter(residential_complex=self.context.get('residential_complex'),
+        chess_board = ChessBoard.objects.get(residential_complex=self.context.get('residential_complex'),
                                     section=validated_data['section'], corps=validated_data['corps'])
         if chess_board:
             chess_board.flat.add(flat)
