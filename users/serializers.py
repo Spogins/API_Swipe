@@ -7,7 +7,7 @@ from rest_framework.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
 from users.forms import CustomSetPasswordForm
-from users.models import User, Role, Notary, Messages
+from users.models import User, Role, Notary, Messages, SavedFilters
 
 
 class UserLoginSerializer(LoginSerializer):
@@ -160,6 +160,16 @@ class MessageApiSerializer(serializers.ModelSerializer):
         return message
 
 
+class SavedFiltersApiSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SavedFilters
+        exclude = ["user"]
 
+    def create(self, validated_data):
+        _filter = SavedFilters.objects.create(
+            user=self.context.get('user'),
+            **validated_data
+        )
+        return _filter
 
 

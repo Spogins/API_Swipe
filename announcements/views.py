@@ -5,8 +5,8 @@ from rest_framework import viewsets, generics, permissions, response, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
-from announcements.models import Announcement, Favorites
-from announcements.serializers import AnnouncementApiSerializer, FavoritesApiSerializer
+from announcements.models import Announcement, Favorites, Promotion
+from announcements.serializers import AnnouncementApiSerializer, FavoritesApiSerializer, PromotionApiSerializer
 
 
 # Create your views here.
@@ -87,4 +87,11 @@ class FavoritesView(PsqMixin, generics.ListAPIView, generics.DestroyAPIView, vie
         obj.delete()
         return response.Response(data={'response': 'Obj удалён'}, status=status.HTTP_200_OK)
 
+
+@extend_schema(tags=['Promotion Announcement'])
+class PromotionView(PsqMixin, viewsets.ModelViewSet):
+    serializer_class = PromotionApiSerializer
+    http_method_names = ['get', 'post', 'patch', 'delete']
+    permission_classes = [permissions.AllowAny]
+    queryset = Promotion.objects.all()
 

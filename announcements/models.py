@@ -1,3 +1,4 @@
+from django.core.validators import MinValueValidator
 from django.db import models
 
 from residential.models import Flat, ChessBoard, Complex
@@ -13,7 +14,7 @@ class Announcement(models.Model):
 class Favorites(models.Model):
     announcement = models.ForeignKey(Announcement, on_delete=models.PROTECT)
     residential_complex = models.ForeignKey(Complex, on_delete=models.PROTECT)
-    user = models.ForeignKey(User, on_delete=models.PROTECT)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
 
 
 class Promotion(models.Model):
@@ -21,6 +22,7 @@ class Promotion(models.Model):
     up_announcement = models.BooleanField(default=False)
     turbo = models.BooleanField(default=False)
     date = models.DateField(auto_now_add=True)
+    price = models.FloatField(validators=[MinValueValidator(1.00)])
 
     class PhraseChoice(models.TextChoices):
         present = ('present', 'Подарок при покупке')

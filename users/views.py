@@ -7,9 +7,9 @@ from rest_framework import viewsets, permissions, response, status, generics
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 
-from users.models import User, Notary, Messages
+from users.models import User, Notary, Messages, SavedFilters
 from users.serializers import BuilderRegistrationSerializer, UserAdminApiSerializer, UserApiSerializer, \
-    NotaryApiSerializer, MessageApiSerializer
+    NotaryApiSerializer, MessageApiSerializer, SavedFiltersApiSerializer
 
 
 class ConfirmCongratulationView(TemplateResponseMixin, View):
@@ -38,7 +38,6 @@ class UserApiView(PsqMixin, viewsets.ModelViewSet):
 
     def profile_obj(self):
         try:
-            print(self.request.user.id)
             obj = User.objects.get(id=self.request.user.id)
             return obj
         except:
@@ -104,3 +103,46 @@ class MessagesView(PsqMixin, generics.ListAPIView, generics.DestroyAPIView, view
         obj.delete()
         return response.Response(data={'response': 'Obj удалён'}, status=status.HTTP_200_OK)
 
+
+@extend_schema(tags=['Saved Filters'])
+class SavedFiltersView(PsqMixin, generics.ListAPIView, viewsets.GenericViewSet):
+    serializer_class = SavedFiltersApiSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        queryset = SavedFilters.objects.all()
+        return queryset
+
+    def profile_obj(self):
+        try:
+            obj = SavedFilters.objects.get(user=self.request.user)
+            return obj
+        except:
+            return response.Response(data={'data': 'something go wrong'}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['POST'], detail=False, url_path='user/create')
+    def create_messages(self, request, *args, **kwargs):
+        if not SavedFilters.objects.filter(user=self.request.user):
+            serializer = self.get_serializer(data=request.data, context={'user': request.user, 'request': request})
+            if serializer.is_valid():
+                serializer.save()
+                return response.Response(data=serializer.data, status=status.HTTP_201_CREATED)
+            return response.Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return response.Response(data={'filter': 'У пользователя есть SavedFilters'}, status=status.HTTP_200_OK)
+
+    @action(methods=['PATCH'], detail=False, url_path='user/update')
+    def profile_update(self, request, *args, **kwargs):
+        obj = self.profile_obj()
+        serializer = self.get_serializer(data=request.data, instance=obj, partial=True, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return response.Response(data=serializer.data, status=status.HTTP_200_OK)
+        else:
+            return response.Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['DELETE'], detail=False, url_path='user/delete')
+    def delete_messages(self, request, *args, **kwargs):
+        obj = self.profile_obj()
+        obj.delete()
+        return response.Response(data={'response': 'Obj удалён'}, status=status.HTTP_200_OK)

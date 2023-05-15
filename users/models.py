@@ -16,7 +16,7 @@ class Role(models.Model):
 
 
 class User(AbstractUser):
-    role = models.ForeignKey(Role, on_delete=models.PROTECT, blank=True, null=True)
+    role = models.ForeignKey(Role, on_delete=models.CASCADE, blank=True, null=True)
     phone = models.IntegerField(null=True, blank=True)
     avatar = models.ImageField(upload_to='users/avatar/', blank=True, null=True)
     black_list = models.BooleanField(blank=True, null=True, default=False)
@@ -32,7 +32,7 @@ class User(AbstractUser):
 class Messages(models.Model):
     text = models.TextField()
     date = models.DateField(auto_now_add=True)
-    sender = models.ForeignKey(User, on_delete=models.PROTECT, related_name='sender')
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sender')
     recipient = models.ForeignKey(User, on_delete=models.PROTECT, related_name='recipient')
 
 
@@ -96,6 +96,7 @@ class SavedFilters(models.Model):
     house_type = models.CharField(max_length=30, choices=HouseTypeChoices.choices, default='common')
     property_status = models.CharField(max_length=50, choices=PropertyChoice.choices)
     living_condition = models.CharField(max_length=50, choices=LivingConditionsChoice.choices)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
 
 
 

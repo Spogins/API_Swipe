@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from announcements.models import Announcement, Favorites
+from announcements.models import Announcement, Favorites, Promotion
 from residential.models import Complex, Flat
 from residential.serializers import ResidentialListSerializer, FlatsInChessBoardApiSerializer
 
@@ -43,3 +43,9 @@ class FavoritesApiSerializer(serializers.ModelSerializer):
             **validated_data
         )
         return favorite
+
+
+class PromotionApiSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Promotion
+        fields = '__all__'
