@@ -7,9 +7,8 @@ from rest_framework import viewsets, permissions, response, status, generics
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 
-from users.models import User, Notary, Messages, SavedFilters
-from users.serializers import BuilderRegistrationSerializer, UserAdminApiSerializer, UserApiSerializer, \
-    NotaryApiSerializer, MessageApiSerializer, SavedFiltersApiSerializer
+from users.models import User, Notary, Messages, SavedFilters, Subscription
+from users.serializers import *
 
 
 class ConfirmCongratulationView(TemplateResponseMixin, View):
@@ -146,3 +145,47 @@ class SavedFiltersView(PsqMixin, generics.ListAPIView, viewsets.GenericViewSet):
         obj = self.profile_obj()
         obj.delete()
         return response.Response(data={'response': 'Obj удалён'}, status=status.HTTP_200_OK)
+
+
+@extend_schema(tags=['Subscription'])
+class SubscriptionAPIViewSet(PsqMixin, viewsets.ModelViewSet):
+    serializer_class = SubscriptionApiSerializer
+    http_method_names = ['get', 'post', 'patch', 'delete']
+    queryset = Subscription.objects.all()
+    permission_classes = [permissions.AllowAny]
+
+
+@extend_schema(tags=['User Subscription'])
+class UserSubscriptionAPIView(PsqMixin, viewsets.GenericViewSet):
+
+    serializer_class = UserSubscriptionSerializer
+
+
+    def get_object(self, *args, **kwargs):
+        try:
+            return UserSubscription.objects.get(user=self.request.user)
+        except UserSubscription.DoesNotExist:
+            raise ValidationError({'detail': _('У вас ще немає підписки.')})
+
+    def list(self, request, *args, **kwargs):
+        serializer = self.get_serializer(instance=self.get_object())
+        return response.Response(data=serializer.data, status=status.HTTP_200_OK)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data, context={'user': request.user})
+        if serializer.is_valid():
+            serializer.save()
+            return response.Response(data=serializer.data, status=status.HTTP_200_OK)
+        return response.Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def partial_update(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data, instance=self.get_object(), partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return response.Response(data=serializer.data, status=status.HTTP_200_OK)
+        return response.Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def destroy(self, request, *args, **kwargs):
+        obj_to_delete: UserSubscription = self.get_object()
+        obj_to_delete.delete()
+        return response.Response(status=status.HTTP_204_NO_CONTENT)

@@ -22,7 +22,10 @@ class User(AbstractUser):
     black_list = models.BooleanField(blank=True, null=True, default=False)
     turn_to_agent = models.BooleanField(blank=True, null=True, default=False)
     is_active = models.BooleanField(blank=True, null=True, default=True)
-
+    agent_first_name = models.CharField(max_length=20, null=True, blank=True)
+    agent_last_name = models.CharField(max_length=20, null=True, blank=True)
+    agent_phone = models.IntegerField(null=True, blank=True)
+    agent_email = models.EmailField(null=True, blank=True)
     REQUIRED_FIELDS = ['password', 'email']
 
     def __str__(self):

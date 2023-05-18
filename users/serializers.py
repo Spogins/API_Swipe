@@ -1,5 +1,8 @@
+from datetime import timedelta
+
 from allauth.account.models import EmailAddress
 from dj_rest_auth.serializers import LoginSerializer, PasswordChangeSerializer
+from django.utils import timezone
 from django.utils.encoding import force_str
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers, status
@@ -7,7 +10,7 @@ from rest_framework.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
 from users.forms import CustomSetPasswordForm
-from users.models import User, Role, Notary, Messages, SavedFilters
+from users.models import *
 
 
 class UserLoginSerializer(LoginSerializer):
@@ -173,3 +176,37 @@ class SavedFiltersApiSerializer(serializers.ModelSerializer):
         return _filter
 
 
+class SubscriptionApiSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subscription
+        fields = '__all__'
+
+
+class UserSubscriptionSerializer(serializers.ModelSerializer):
+    subscription = SubscriptionApiSerializer()
+
+    class Meta:
+        model = UserSubscription
+        exclude = ['user']
+        read_only_fields = ['expire_date']
+
+    def to_internal_value(self, data):
+        ret = {}
+        try:
+            ret['subscription'] = Subscription.objects.get(pk=data.get('subscription'))
+        except Subscription.DoesNotExist:
+            raise ValidationError({'detail': _('Вказаної підписки не існує.')})
+        return ret
+
+    def validate(self, attrs):
+        if not self.instance and UserSubscription.objects.filter(user=self.context.get('user')).exists():
+            raise ValidationError({'user': _('У вас вже є підписка.')})
+        return super().validate(attrs)
+
+    def create(self, validated_data):
+        subscription = UserSubscription.objects.create(
+            user=self.context.get('user'),
+            expire_date=timezone.now() + timedelta(days=30),
+            **validated_data
+        )
+        return subscription
