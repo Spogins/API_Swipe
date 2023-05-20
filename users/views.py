@@ -8,6 +8,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 
 from users.models import User, Notary, Messages, SavedFilters, Subscription
+from users.permissions import *
 from users.serializers import *
 
 
@@ -26,13 +27,14 @@ class BuilderRegisterView(RegisterView):
 class UserApiView(PsqMixin, viewsets.ModelViewSet):
     serializer_class = UserApiSerializer
     http_method_names = ['get', 'post', 'patch', 'delete']
-    permission_classes = [permissions.AllowAny]
     queryset = User.objects.all()
+    permission_classes = [IsAdminPermission]
 
     psq_rules = {
-        'create': [
-            Rule(serializer_class=UserAdminApiSerializer)
-        ]
+        ('list', 'block'): [Rule([IsManagerPermission | IsAdminPermission], UserAdminApiSerializer)],
+        ('profile_usr', 'profile_update'): [Rule([IsAuthenticated], UserApiSerializer)],
+        'create': [Rule([IsAdminPermission], UserAdminApiSerializer)],
+        'managers_list': [Rule([CustomIsAuthenticated], UserRegistrationSerializer)]
     }
 
     def profile_obj(self):
@@ -63,14 +65,30 @@ class UserApiView(PsqMixin, viewsets.ModelViewSet):
 class NotaryView(PsqMixin, viewsets.ModelViewSet):
     serializer_class = NotaryApiSerializer
     http_method_names = ['get', 'post', 'patch', 'delete']
-    permission_classes = [permissions.AllowAny]
     queryset = Notary.objects.all()
+
+    # psq_rules = {
+    #     ('list', 'create', 'retrieve', 'destroy'):
+    #         [Rule([IsAdminPermission]), Rule([IsManagerPermission])],
+    #     ('partial_update',):
+    #         [Rule([IsAdminPermission], NotaryApiSerializer), Rule([IsManagerPermission], NotaryApiSerializer)]
+    # }
 
 
 @extend_schema(tags=['Messages'])
 class MessagesView(PsqMixin, generics.ListAPIView, generics.DestroyAPIView, viewsets.GenericViewSet):
     serializer_class = MessageApiSerializer
-    permission_classes = [permissions.AllowAny]
+    psq_rules = {
+        'send_to_manager': [
+            Rule([IsUserPermission])
+        ],
+        'create_messages': [
+            Rule([IsAdminPermission | IsManagerPermission])
+        ],
+        ('retrieve',): [
+            Rule([IsManagerPermission | IsAdminPermission | IsUserPermission], MessageApiSerializer)
+        ]
+    }
 
     def get_object(self, *args, **kwargs):
         try:
@@ -106,7 +124,11 @@ class MessagesView(PsqMixin, generics.ListAPIView, generics.DestroyAPIView, view
 @extend_schema(tags=['Saved Filters'])
 class SavedFiltersView(PsqMixin, generics.ListAPIView, viewsets.GenericViewSet):
     serializer_class = SavedFiltersApiSerializer
-    permission_classes = [permissions.AllowAny]
+    psq_rules = {
+        ('list', 'create_filter', 'profile_update', 'delete_messages'): [
+            Rule([IsUserPermission, IsOwnerPermission])
+        ]
+    }
 
     def get_queryset(self):
         queryset = SavedFilters.objects.all()
@@ -120,7 +142,7 @@ class SavedFiltersView(PsqMixin, generics.ListAPIView, viewsets.GenericViewSet):
             return response.Response(data={'data': 'something go wrong'}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(methods=['POST'], detail=False, url_path='user/create')
-    def create_messages(self, request, *args, **kwargs):
+    def create_filter(self, request, *args, **kwargs):
         if not SavedFilters.objects.filter(user=self.request.user):
             serializer = self.get_serializer(data=request.data, context={'user': request.user, 'request': request})
             if serializer.is_valid():
@@ -152,14 +174,27 @@ class SubscriptionAPIViewSet(PsqMixin, viewsets.ModelViewSet):
     serializer_class = SubscriptionApiSerializer
     http_method_names = ['get', 'post', 'patch', 'delete']
     queryset = Subscription.objects.all()
-    permission_classes = [permissions.AllowAny]
+
+    # psq_rules = {
+    #     ('list', 'retrieve'): [
+    #         Rule([CustomIsAuthenticated])
+    #     ],
+    #     ('create', 'partial_update', 'destroy'): [
+    #         Rule([IsAdminPermission]),
+    #         Rule([IsManagerPermission])
+    #     ]
+    # }
 
 
 @extend_schema(tags=['User Subscription'])
 class UserSubscriptionAPIView(PsqMixin, viewsets.GenericViewSet):
 
     serializer_class = UserSubscriptionSerializer
-
+    psq_rules = {
+        ('list', 'create', 'partial_update', 'destroy'): [
+            Rule([IsUserPermission])
+        ]
+    }
 
     def get_object(self, *args, **kwargs):
         try:

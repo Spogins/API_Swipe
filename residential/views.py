@@ -1,19 +1,40 @@
 from django.utils.translation import gettext_lazy as _
 from django.shortcuts import render
-from drf_psq import PsqMixin
+from drf_psq import PsqMixin, Rule
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, generics, decorators, permissions, response, status
 from rest_framework.decorators import action
 
 from residential.models import *
 from residential.serializers import *
+from users.permissions import *
 
 
 @extend_schema(tags=['Residential Complex'], )
-class ResidentialComplexSet(viewsets.ModelViewSet):
+class ResidentialComplexSet(PsqMixin, viewsets.ModelViewSet):
     serializer_class = ResidentialSerializer
     http_method_names = ['get', 'post', 'patch', 'delete']
-    permission_classes = [permissions.AllowAny]
+    psq_rules = {
+        ('list',): [
+            Rule([CustomIsAuthenticated], ResidentialSerializer)
+        ],
+        ('retrieve',): [
+            Rule([CustomIsAuthenticated])
+        ],
+        ('create',): [
+            Rule([IsBuilderPermission])
+        ],
+        ('destroy',): [
+            Rule([IsAdminPermission]),
+            Rule([IsManagerPermission])
+        ],
+        ('res_user',): [
+            Rule([IsBuilderPermission])
+        ],
+        ('update_res_user', 'delete_res_user'): [
+            Rule([IsBuilderPermission])
+        ],
+    }
 
     def get_queryset(self):
         queryset = Complex.objects \
@@ -62,7 +83,14 @@ class ResidentialComplexSet(viewsets.ModelViewSet):
 class SectionView(PsqMixin, generics.ListAPIView, generics.DestroyAPIView, viewsets.GenericViewSet):
     serializer_class = SectionApiSerializer
     http_method_names = ['get', 'post', 'patch', 'delete']
-    permission_classes = [permissions.AllowAny]
+    psq_rules = {
+        ('list', 'destroy'):
+            [Rule([IsAdminPermission], SectionApiSerializer), Rule([IsManagerPermission], SectionApiSerializer)],
+        ('section', 'create_section', 'delete_section'):
+            [Rule([IsBuilderPermission, IsOwnerPermission], SectionApiSerializer)],
+        'retrieve':
+            [Rule([CustomIsAuthenticated], SectionApiSerializer)]
+    }
 
     def get_object(self, *args, **kwargs):
         try:
@@ -112,7 +140,20 @@ class SectionView(PsqMixin, generics.ListAPIView, generics.DestroyAPIView, views
 class CorpsView(PsqMixin, generics.ListAPIView, generics.DestroyAPIView, viewsets.GenericViewSet):
     serializer_class = CorpsApiSerializer
     http_method_names = ['get', 'post', 'patch', 'delete']
-    permission_classes = [permissions.AllowAny]
+    psq_rules = {
+        ('list', 'destroy'): [
+            Rule([IsAdminPermission]),
+            Rule([IsManagerPermission])
+        ],
+        ('corps', 'create_corps'): [
+            Rule([IsBuilderPermission])
+        ],
+        'delete_corps': [
+            Rule([IsBuilderPermission, IsOwnerPermission])
+        ],
+        'retrieve':
+            [Rule([CustomIsAuthenticated])]
+    }
 
     def get_object(self, *args, **kwargs):
         try:
@@ -152,7 +193,7 @@ class CorpsView(PsqMixin, generics.ListAPIView, generics.DestroyAPIView, viewset
         return response.Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(methods=['DELETE'], detail=True, url_path='user/delete')
-    def delete_flat_user(self, request, *args, **kwargs):
+    def delete_corps(self, request, *args, **kwargs):
         obj = self.get_queryset().filter(residential_complex__user=request.user)
         obj.delete()
         return response.Response(data={'response': 'Obj удалён'}, status=status.HTTP_200_OK)
@@ -161,7 +202,14 @@ class CorpsView(PsqMixin, generics.ListAPIView, generics.DestroyAPIView, viewset
 @extend_schema(tags=['Floor'])
 class FloorView(PsqMixin, generics.ListAPIView, generics.DestroyAPIView, viewsets.GenericViewSet):
     serializer_class = FloorApiSerializer
-    permission_classes = [permissions.AllowAny]
+    psq_rules = {
+        ('list', 'destroy'):
+            [Rule([IsAdminPermission], FloorApiSerializer), Rule([IsManagerPermission], FloorApiSerializer)],
+        ('floors_list', 'floors_create', 'floors_delete'):
+            [Rule([IsBuilderPermission, IsOwnerPermission], FloorApiSerializer)],
+        'retrieve':
+            [Rule([CustomIsAuthenticated], FloorApiSerializer)]
+    }
     
     def get_object(self, *args, **kwargs):
         try:
@@ -228,7 +276,24 @@ class NewsView(PsqMixin, viewsets.ModelViewSet):
 class FlatView(PsqMixin, viewsets.ModelViewSet):
     serializer_class = FlatApiSerializer
     http_method_names = ['get', 'post', 'patch', 'delete']
-    permission_classes = [permissions.AllowAny]
+    psq_rules = {
+        'list': [
+            Rule([CustomIsAuthenticated], FlatApiSerializer)
+        ],
+        'retrieve': [
+            Rule([CustomIsAuthenticated])
+        ],
+        ('partial_update', 'destroy'): [
+            Rule([IsAdminPermission]), Rule([IsManagerPermission])
+        ],
+        'flat_user': [
+            Rule([IsBuilderPermission, IsOwnerPermission], FlatApiSerializer)
+        ],
+        ('create_flat_user', 'update_flat_user', 'delete_flat_user'): [
+            Rule([IsBuilderPermission, IsOwnerPermission])
+        ]
+    }
+
 
     def get_queryset(self):
         queryset = Flat.objects \
@@ -284,7 +349,21 @@ class FlatView(PsqMixin, viewsets.ModelViewSet):
 class ChessBoardView(PsqMixin, generics.DestroyAPIView, viewsets.GenericViewSet):
     serializer_class = ChessBoardApiSerializer
     # http_method_names = ['get', 'patch', 'post', 'delete']
-    permission_classes = [permissions.AllowAny]
+    psq_rules = {
+        'chessboard_list': [
+            Rule([CustomIsAuthenticated], ChessBoardApiSerializer)
+        ],
+        'retrieve': [
+            Rule([CustomIsAuthenticated])
+        ],
+        'destroy': [
+            Rule([IsAdminPermission]),
+            Rule([IsManagerPermission])
+        ],
+        ('chessboard_user', 'create_chessboard_user', 'delete_chessboard_user'): [
+            Rule([IsBuilderPermission, IsOwnerPermission])
+        ]
+    }
 
     def get_queryset(self):
         queryset = ChessBoard.objects \
