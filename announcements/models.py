@@ -12,8 +12,8 @@ class Announcement(models.Model):
 
 
 class Favorites(models.Model):
-    announcement = models.ForeignKey(Announcement, on_delete=models.PROTECT)
-    residential_complex = models.ForeignKey(Complex, on_delete=models.PROTECT)
+    announcement = models.ForeignKey(Announcement, on_delete=models.CASCADE)
+    residential_complex = models.ForeignKey(Complex, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
 

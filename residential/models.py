@@ -122,11 +122,11 @@ class Flat(models.Model):
     living_condition = models.CharField(max_length=50, choices=LivingConditionsChoice.choices)
     planning = models.CharField(max_length=50, choices=PlanningChoice.choices)
     residential_complex = models.ForeignKey(Complex, on_delete=models.CASCADE)
-    section = models.ForeignKey(Section, on_delete=models.PROTECT)
-    corps = models.ForeignKey(Corps, on_delete=models.PROTECT)
-    floor = models.ForeignKey(Floor, on_delete=models.PROTECT)
+    section = models.ForeignKey(Section, on_delete=models.CASCADE)
+    corps = models.ForeignKey(Corps, on_delete=models.CASCADE)
+    floor = models.ForeignKey(Floor, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    gallery = models.ForeignKey(Gallery, on_delete=models.PROTECT)
+    gallery = models.ForeignKey(Gallery, on_delete=models.CASCADE)
 
 
 class ChessBoard(models.Model):

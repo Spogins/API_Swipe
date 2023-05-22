@@ -255,21 +255,192 @@ class FloorView(PsqMixin, generics.ListAPIView, generics.DestroyAPIView, viewset
 
 
 @extend_schema(tags=['Documents'])
-class DocumentView(PsqMixin, viewsets.ModelViewSet):
+class DocumentView(PsqMixin, generics.ListCreateAPIView, generics.RetrieveUpdateAPIView, generics.DestroyAPIView, viewsets.GenericViewSet):
     serializer_class = DocumentApiSerializer
     http_method_names = ['get', 'post', 'patch', 'delete']
-    permission_classes = [permissions.AllowAny]
-    queryset = Documents.objects.all()
 
+    psq_rules = {
+        ('create', 'partial_update', 'destroy'):
+            [Rule([IsAdminPermission], DocumentApiSerializer), Rule([IsManagerPermission], DocumentApiSerializer)],
+        ('list', 'retrieve'):
+            [Rule([CustomIsAuthenticated])],
+        ('my_documents', 'my_documents_create'):
+            [Rule([IsBuilderPermission], DocumentApiSerializer)],
+        ('my_documents_update', 'my_documents_delete'):
+            [Rule([IsBuilderPermission]),
+             Rule([IsOwnerPermission])]
+    }
 
+    def get_queryset(self):
+        queryset = Documents.objects.all()
+        return queryset
+
+    def get_own_documents_queryset(self):
+        queryset = Documents.objects.filter(residential_complex__owner=self.request.user)
+        return queryset
+
+    def get_object(self):
+        try:
+            return Documents.objects \
+                .select_related('residential_complex', 'residential_complex__user') \
+                .get(pk=self.kwargs.get(self.lookup_field))
+        except Documents.DoesNotExist:
+            raise ValidationError({'detail': _('Вказаного документу не існує.')})
+
+    def get_residential_complex(self):
+        try:
+            return Complex.objects.get(owner=self.request.user)
+        except Complex.DoesNotExist:
+            raise ValidationError({'detail': _('У вас немає зареєстрованих ЖК.')})
+
+    def retrieve(self, request, *args, **kwargs):
+        obj = self.get_object()
+        serializer = self.get_serializer(instance=obj)
+        return response.Response(data=serializer.data, status=status.HTTP_200_OK)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.paginate_queryset(self.get_queryset())
+        serializer = self.get_serializer(instance=queryset, many=True)
+        return self.get_paginated_response(serializer.data)
+
+    def create(self, request, *args, **kwargs):
+        serializer: DocumentApiSerializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return response.Response(data=serializer.data, status=status.HTTP_201_CREATED)
+        return response.Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def partial_update(self, request, *args, **kwargs):
+        obj = self.get_object()
+        serializer = self.get_serializer(data=request.data, instance=obj, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return response.Response(data=serializer.data, status=status.HTTP_200_OK)
+        return response.Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def destroy(self, request, *args, **kwargs):
+        document_to_delete = self.get_object()
+        document_to_delete.delete()
+        return response.Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(methods=['GET'], detail=False, url_path='user')
+    def my_documents(self, request, *args, **kwargs):
+        queryset = self.paginate_queryset(self.get_own_documents_queryset())
+        serializer = self.get_serializer(instance=queryset, many=True)
+        return self.get_paginated_response(data=serializer.data)
+
+    @action(methods=['POST'], detail=False, url_path='user/create')
+    def my_documents_create(self, request, *args, **kwargs):
+        residential_complex = self.get_residential_complex()
+        serializer = self.get_serializer(data=request.data, context={'residential_complex': residential_complex})
+        if serializer.is_valid():
+            serializer.save()
+            return response.Response(data=serializer.data, status=status.HTTP_201_CREATED)
+        return response.Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['PATCH'], detail=True, url_path='user/update')
+    def my_documents_update(self, request, *args, **kwargs):
+        obj: Documents = self.get_object()
+        serializer = self.get_serializer(data=request.data, instance=obj, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return response.Response(data=serializer.data, status=status.HTTP_200_OK)
+        return response.Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['DELETE'], detail=True, url_path='user/delete')
+    def my_documents_delete(self, request, *args, **kwargs):
+        obj: Documents = self.get_object()
+        if obj.residential_complex.owner != request.user:
+            raise ValidationError({'detail': _('У вас нет доступа.')},
+                                  code=status.HTTP_403_FORBIDDEN)
+        obj.delete()
+        return response.Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @extend_schema(tags=['News'])
-class NewsView(PsqMixin, viewsets.ModelViewSet):
+class NewsView(PsqMixin, generics.ListCreateAPIView, generics.RetrieveUpdateAPIView, generics.DestroyAPIView, viewsets.GenericViewSet):
     serializer_class = NewsApiSerializer
     http_method_names = ['get', 'post', 'patch', 'delete']
-    permission_classes = [permissions.AllowAny]
-    queryset = News.objects.all()
+
+    psq_rules = {
+        ('create', 'partial_update', 'destroy'):
+            [Rule([IsAdminPermission]), Rule([IsManagerPermission])],
+        ('my_news', 'my_news_create', 'my_news_update', 'my_news_delete'):
+            [Rule([IsBuilderPermission])],
+        ('list', 'retrieve'):
+            [Rule([CustomIsAuthenticated])]
+    }
+
+    def get_queryset(self):
+        queryset = News.objects.all()
+        return queryset
+
+    def get_own_news_queryset(self):
+        queryset = News.objects.filter(residential_complex__owner=self.request.user)
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.paginate_queryset(self.get_queryset())
+        serializer = self.get_serializer(instance=queryset, many=True)
+        return self.get_paginated_response(data=serializer.data)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return response.Response(serializer.data, status=status.HTTP_201_CREATED)
+        return response.Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def retrieve(self, request, *args, **kwargs):
+        obj = self.get_object()
+        serializer = self.get_serializer(instance=obj)
+        return response.Response(data=serializer.data, status=status.HTTP_200_OK)
+
+    def partial_update(self, request, *args, **kwargs):
+        obj = self.get_object()
+        serializer = self.get_serializer(data=request.data, instance=obj, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return response.Response(data=serializer.data, status=status.HTTP_200_OK)
+        return response.Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def destroy(self, request, *args, **kwargs):
+        obj = self.get_object()
+        obj.delete()
+        return response.Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(methods=['GET'], detail=False, url_path='user')
+    def my_news(self, request, *args, **kwargs):
+        queryset = self.paginate_queryset(self.get_own_news_queryset())
+        serializer = self.get_serializer(instance=queryset, many=True)
+        return self.get_paginated_response(data=serializer.data)
+
+    @action(methods=['POST'], detail=False, url_path='user/create')
+    def my_news_create(self, request, *args, **kwargs):
+        residential_complex = self.get_residential_complex()
+        serializer = self.get_serializer(data=request.data, context={'residential_complex': residential_complex})
+        if serializer.is_valid():
+            serializer.save()
+            return response.Response(data=serializer.data, status=status.HTTP_201_CREATED)
+        return response.Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['PATCH'], detail=True, url_path='user/update')
+    def my_news_update(self, request, *args, **kwargs):
+        obj: News = self.get_object()
+        if obj.residential_complex.owner != request.user:
+            raise ValidationError({'detail': _('У вас нет доступа для обновления.')},
+                                  code=status.HTTP_403_FORBIDDEN)
+        serializer = self.get_serializer(data=request.data, instance=obj, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return response.Response(data=serializer.data, status=status.HTTP_200_OK)
+        return response.Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['DELETE'], detail=True, url_path='my/delete')
+    def my_news_delete(self, request, *args, **kwargs):
+        obj: News = self.get_object()
+        obj.delete()
+        return response.Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @extend_schema(tags=['Flats'])

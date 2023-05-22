@@ -2,10 +2,11 @@ from dj_rest_auth.registration.views import RegisterView
 from django.views.generic.base import TemplateResponseMixin, View
 from django.utils.translation import gettext_lazy as _
 from drf_psq import PsqMixin, Rule
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import viewsets, permissions, response, status, generics
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
+from rest_framework.fields import CharField
 
 from users.models import User, Notary, Messages, SavedFilters, Subscription
 from users.permissions import *
@@ -31,7 +32,7 @@ class UserApiView(PsqMixin, viewsets.ModelViewSet):
     permission_classes = [IsAdminPermission]
 
     psq_rules = {
-        ('list', 'block'): [Rule([IsManagerPermission | IsAdminPermission], UserAdminApiSerializer)],
+        ('list', 'block', 'unblock'): [Rule([IsManagerPermission | IsAdminPermission], UserAdminApiSerializer)],
         ('profile_usr', 'profile_update'): [Rule([IsAuthenticated], UserApiSerializer)],
         'create': [Rule([IsAdminPermission], UserAdminApiSerializer)],
         'managers_list': [Rule([CustomIsAuthenticated], UserRegistrationSerializer)]
@@ -43,6 +44,73 @@ class UserApiView(PsqMixin, viewsets.ModelViewSet):
             return obj
         except:
             return response.Response(data={'data': 'something go wrong'}, status=status.HTTP_400_BAD_REQUEST)
+
+    def get_object(self, *args, **kwargs):
+        try:
+            return User.objects.get(pk=self.kwargs.get('pk'))
+        except User.DoesNotExist:
+            raise ValidationError({'detail': _('error.')})
+
+    # @extend_schema(
+    #     request={},
+    #     responses={
+    #         '200': inline_serializer(
+    #             name='Successfully blocked user.',
+    #             fields={
+    #                 'detail': CharField(default=_('Пользователь заблокирован.'))
+    #             }
+    #         ),
+    #         '400': inline_serializer(
+    #             name='User has already blocked.',
+    #             fields={
+    #                 'detail': CharField(default=_('Пользователь уже заблокирован.'))
+    #             }
+    #         ),
+    #         '403': inline_serializer(
+    #             name='Forbidden',
+    #             fields={
+    #                 'detail': CharField(default=_('Вы не можете заблокировать этого пользователя.'))
+    #             }
+    #         )
+    #     }
+    # )
+    @action(detail=True, methods=['POST'])
+    def block(self, request, *args, **kwargs):
+        user = self.get_object()
+        if user.black_list:
+            return response.Response(data={'detail': _('Пользователь уже заблокирован.')}, status=status.HTTP_400_BAD_REQUEST)
+        if user.role.role == 'admin':
+            return response.Response(data={'detail': _('Вы не можете заблокировать этого пользователя.')},
+                            status=status.HTTP_403_FORBIDDEN)
+        user.black_list = True
+        user.save()
+        return response.Response(data={'detail': _('Пользователь заблокирован.')}, status=status.HTTP_200_OK)
+
+    # @extend_schema(
+    #     request={},
+    #     responses={
+    #         '200': inline_serializer(
+    #             name='Successfully unblocked user.',
+    #             fields={
+    #                 'detail': CharField(default=_('Пользователь заблокирован.'))
+    #             }
+    #         ),
+    #         '400': inline_serializer(
+    #             name='User is not blocked.',
+    #             fields={
+    #                 'detail': CharField(default=_('Пользователь не заблокирован.'))
+    #             }
+    #         ),
+    #     }
+    # )
+    @action(detail=True, methods=['POST'])
+    def unblock(self, request, *args, **kwargs):
+        user = self.get_object()
+        if not user.black_list:
+            return response.Response(data={'detail': _('Пользователь не заблокирован.')}, status=status.HTTP_400_BAD_REQUEST)
+        user.black_list = False
+        user.save()
+        return response.Response({'detail': _('Пользователь розблокирован')}, status=status.HTTP_200_OK)
 
     @action(methods=['GET'], detail=False, url_path='profile')
     def profile_usr(self, request, *args, **kwargs):
