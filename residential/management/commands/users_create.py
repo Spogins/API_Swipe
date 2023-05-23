@@ -13,13 +13,14 @@ class Command(BaseCommand):
                 username='admin@admin.com',
                 first_name='admin',
                 last_name='admin',
-                is_stuff=True,
+                is_staff=True,
                 phone=555555555,
                 email='admin@admin.com',
                 is_active=True,
                 role=role
             )
             admin.set_password('swipe5231')
+            admin.save()
             email = EmailAddress.objects.create(
                 email=admin.email,
                 verified=True,
@@ -34,13 +35,14 @@ class Command(BaseCommand):
                 username='manager@manager.com',
                 first_name='manager',
                 last_name='manager',
-                is_stuff=True,
+                is_staff=True,
                 phone=555555555,
                 email='manager@manager.com',
                 is_active=True,
                 role=role
             )
             manager.set_password('swipe5231')
+            manager.save()
             email = EmailAddress.objects.create(
                 email=manager.email,
                 verified=True,
@@ -55,13 +57,14 @@ class Command(BaseCommand):
                 username='builder@builder.com',
                 first_name='builder',
                 last_name='builder',
-                is_stuff=False,
+                is_staff=False,
                 phone=555555555,
                 email='builder@builder.com',
                 is_active=True,
                 role=role
             )
             builder.set_password('swipe5231')
+            builder.save()
             email = EmailAddress.objects.create(
                 email=builder.email,
                 verified=True,
@@ -76,13 +79,14 @@ class Command(BaseCommand):
                 username='user@user.com',
                 first_name='user',
                 last_name='user',
-                is_stuff=False,
+                is_staff=False,
                 phone=555555555,
                 email='user@user.com',
                 is_active=True,
                 role=role
             )
             user.set_password('swipe5231')
+            user.save()
             email = EmailAddress.objects.create(
                 email=user.email,
                 verified=True,

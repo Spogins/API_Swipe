@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    command: gunicorn swipe.wsgi:application --bind 0.0.0.0:8000
+    volumes:
+      - static_volume:/usr/src/app/static
+      - media_volume:/usr/src/app/media
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+
+
+  db:
+    image: postgres:13.0
+    volumes:
+      - ./docker/postgresql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    env_file:
+      - .env
+
+  nginx:
+    build: ./docker/nginx
+    volumes:
+      - static_volume:/usr/src/app/static
+      - media_volume:/usr/src/app/media
+    ports:
+      - 80:80
+    depends_on:
+      - web
+
+
+  redis:
+    image: 'redis:alpine'
+
+  celery:
+    restart: always
+    build:
+      context: .
+    command: python -m celery -A swipe worker
+    env_file:
+      - .env
+    depends_on:
+      - web
+      - redis
+
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
