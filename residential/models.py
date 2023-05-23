@@ -2,7 +2,7 @@ from django.core.validators import MinValueValidator
 from django.db import models
 from files.models import Gallery
 from users.models import User
-from announcements.models import Announcement
+
 
 # from users.models import User
 
@@ -80,23 +80,23 @@ class Complex(models.Model):
     contract_sum = models.CharField(max_length=50, choices=ContractSumChoice.choices)
     property_status = models.CharField(max_length=50, choices=PropertyChoice.choices)
 
-    user = models.ForeignKey(User, on_delete=models.PROTECT)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     gallery = models.ForeignKey(Gallery, on_delete=models.PROTECT)
 
 
 class Section(models.Model):
     name = models.CharField(max_length=100)
-    residential_complex = models.ForeignKey(Complex, on_delete=models.PROTECT)
+    residential_complex = models.ForeignKey(Complex, on_delete=models.CASCADE)
 
 
 class Corps(models.Model):
     name = models.CharField(max_length=100)
-    residential_complex = models.ForeignKey(Complex, on_delete=models.PROTECT)
+    residential_complex = models.ForeignKey(Complex, on_delete=models.CASCADE)
 
 
 class Floor(models.Model):
     name = models.CharField(max_length=100)
-    residential_complex = models.ForeignKey(Complex, on_delete=models.PROTECT)
+    residential_complex = models.ForeignKey(Complex, on_delete=models.CASCADE)
 
 
 class Flat(models.Model):
@@ -121,24 +121,31 @@ class Flat(models.Model):
 
     living_condition = models.CharField(max_length=50, choices=LivingConditionsChoice.choices)
     planning = models.CharField(max_length=50, choices=PlanningChoice.choices)
-    residential_complex = models.ForeignKey(Complex, on_delete=models.PROTECT)
-    section = models.ForeignKey(Section, on_delete=models.PROTECT)
-    corps = models.ForeignKey(Corps, on_delete=models.PROTECT)
-    floor = models.ForeignKey(Floor, on_delete=models.PROTECT)
-    user = models.ForeignKey(User, on_delete=models.PROTECT)
-    gallery = models.ForeignKey(Gallery, on_delete=models.PROTECT)
-    announcement = models.OneToOneField(Announcement, on_delete=models.CASCADE)
+    residential_complex = models.ForeignKey(Complex, on_delete=models.CASCADE)
+    section = models.ForeignKey(Section, on_delete=models.CASCADE)
+    corps = models.ForeignKey(Corps, on_delete=models.CASCADE)
+    floor = models.ForeignKey(Floor, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    gallery = models.ForeignKey(Gallery, on_delete=models.CASCADE)
 
 
 class ChessBoard(models.Model):
-    residential_complex = models.ForeignKey(Complex, on_delete=models.PROTECT)
-    section = models.ForeignKey(Section, on_delete=models.PROTECT)
-    corps = models.ForeignKey(Corps, on_delete=models.PROTECT)
+    residential_complex = models.ForeignKey(Complex, on_delete=models.CASCADE)
+    section = models.ForeignKey(Section, on_delete=models.CASCADE)
+    corps = models.ForeignKey(Corps, on_delete=models.CASCADE)
     date = models.DateField(auto_now_add=True)
+    flat = models.ManyToManyField(Flat)
+
 
 
 class Documents(models.Model):
     name = models.CharField(max_length=30)
-    document = models.FileField()
-    residential_complex = models.ForeignKey(Complex, on_delete=models.PROTECT)
+    document = models.FileField(upload_to='documents/')
+    residential_complex = models.ForeignKey(Complex, on_delete=models.CASCADE)
 
+
+class News(models.Model):
+    title = models.CharField(max_length=30)
+    text = models.TextField()
+    date = models.DateField(auto_now_add=True)
+    residential_complex = models.ForeignKey(Complex, on_delete=models.CASCADE)
