@@ -4,6 +4,7 @@ from drf_psq import PsqMixin, Rule
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, generics, decorators, permissions, response, status
 from rest_framework.decorators import action
+from rest_framework.parsers import JSONParser, MultiPartParser
 
 from residential.models import *
 from residential.serializers import *
@@ -12,11 +13,12 @@ from users.permissions import *
 
 @extend_schema(tags=['Residential Complex'], )
 class ResidentialComplexSet(PsqMixin, viewsets.ModelViewSet):
-    serializer_class = ResidentialSerializer
+    serializer_class = Residential64Serializer
+    parser_classes = [JSONParser, MultiPartParser]
     http_method_names = ['get', 'post', 'patch', 'delete']
     psq_rules = {
         ('list',): [
-            Rule([CustomIsAuthenticated], ResidentialSerializer)
+            Rule([CustomIsAuthenticated], Residential64Serializer)
         ],
         ('retrieve',): [
             Rule([CustomIsAuthenticated])
@@ -35,6 +37,14 @@ class ResidentialComplexSet(PsqMixin, viewsets.ModelViewSet):
             Rule([IsBuilderPermission])
         ],
     }
+
+    def change_serializer(self, request):
+        content_type = request.content_type
+        if 'application/json' in content_type:
+            return Residential64Serializer
+        elif 'multipart/form-data' in content_type:
+            return ResidentialSerializer
+
 
     def get_queryset(self):
         queryset = Complex.objects \
@@ -61,9 +71,10 @@ class ResidentialComplexSet(PsqMixin, viewsets.ModelViewSet):
 
     @action(methods=['PATCH'], detail=False, url_path='user/update')
     def update_res_user(self, request, *args, **kwargs):
-        obj = self.user_object()
-        serializer = self.get_serializer(data=request.data, instance=obj, partial=True, context={'request': request})
 
+        obj = self.user_object()
+
+        serializer = self.change_serializer(request)(data=request.data, instance=obj, partial=True, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return response.Response(data=serializer.data, status=status.HTTP_200_OK)
@@ -257,6 +268,7 @@ class FloorView(PsqMixin, generics.ListAPIView, generics.DestroyAPIView, viewset
 @extend_schema(tags=['Documents'])
 class DocumentView(PsqMixin, generics.ListCreateAPIView, generics.RetrieveUpdateAPIView, generics.DestroyAPIView, viewsets.GenericViewSet):
     serializer_class = DocumentApiSerializer
+    parser_classes = [MultiPartParser]
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     psq_rules = {

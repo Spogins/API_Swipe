@@ -5,10 +5,7 @@ from drf_psq import PsqMixin, Rule
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import viewsets, permissions, response, status, generics
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
-from rest_framework.fields import CharField
-
-from users.models import User, Notary, Messages, SavedFilters, Subscription
+from rest_framework.parsers import MultiPartParser, JSONParser
 from users.permissions import *
 from users.serializers import *
 
@@ -25,9 +22,10 @@ class BuilderRegisterView(RegisterView):
 
 
 @extend_schema(tags=['User'])
-class UserApiView(PsqMixin, viewsets.ModelViewSet):
+class UserApiView(PsqMixin, generics.ListCreateAPIView, generics.DestroyAPIView, viewsets.GenericViewSet):
     serializer_class = UserApiSerializer
-    http_method_names = ['get', 'post', 'patch', 'delete']
+    parser_classes = [JSONParser, MultiPartParser]
+    # http_method_names = ['get', 'post', 'patch', 'delete']
     queryset = User.objects.all()
     permission_classes = [IsAdminPermission]
 
@@ -37,6 +35,14 @@ class UserApiView(PsqMixin, viewsets.ModelViewSet):
         'create': [Rule([IsAdminPermission], UserAdminApiSerializer)],
         'managers_list': [Rule([CustomIsAuthenticated], UserRegistrationSerializer)]
     }
+
+    def change_serializer(self, request):
+        content_type = request.content_type
+        if 'application/json' in content_type:
+            return UserApi64Serializer
+        elif 'multipart/form-data' in content_type:
+            return UserApiSerializer
+
 
     def profile_obj(self):
         try:
@@ -51,29 +57,19 @@ class UserApiView(PsqMixin, viewsets.ModelViewSet):
         except User.DoesNotExist:
             raise ValidationError({'detail': _('error.')})
 
-    # @extend_schema(
-    #     request={},
-    #     responses={
-    #         '200': inline_serializer(
-    #             name='Successfully blocked user.',
-    #             fields={
-    #                 'detail': CharField(default=_('Пользователь заблокирован.'))
-    #             }
-    #         ),
-    #         '400': inline_serializer(
-    #             name='User has already blocked.',
-    #             fields={
-    #                 'detail': CharField(default=_('Пользователь уже заблокирован.'))
-    #             }
-    #         ),
-    #         '403': inline_serializer(
-    #             name='Forbidden',
-    #             fields={
-    #                 'detail': CharField(default=_('Вы не можете заблокировать этого пользователя.'))
-    #             }
-    #         )
-    #     }
-    # )
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.change_serializer(request)(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return response.Response(data=serializer.data, status=status.HTTP_201_CREATED)
+        return response.Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+
+
     @action(detail=True, methods=['POST'])
     def block(self, request, *args, **kwargs):
         user = self.get_object()
@@ -86,23 +82,7 @@ class UserApiView(PsqMixin, viewsets.ModelViewSet):
         user.save()
         return response.Response(data={'detail': _('Пользователь заблокирован.')}, status=status.HTTP_200_OK)
 
-    # @extend_schema(
-    #     request={},
-    #     responses={
-    #         '200': inline_serializer(
-    #             name='Successfully unblocked user.',
-    #             fields={
-    #                 'detail': CharField(default=_('Пользователь заблокирован.'))
-    #             }
-    #         ),
-    #         '400': inline_serializer(
-    #             name='User is not blocked.',
-    #             fields={
-    #                 'detail': CharField(default=_('Пользователь не заблокирован.'))
-    #             }
-    #         ),
-    #     }
-    # )
+
     @action(detail=True, methods=['POST'])
     def unblock(self, request, *args, **kwargs):
         user = self.get_object()
@@ -121,7 +101,7 @@ class UserApiView(PsqMixin, viewsets.ModelViewSet):
     @action(methods=['PATCH'], detail=False, url_path='profile/update')
     def profile_update(self, request, *args, **kwargs):
         obj = self.profile_obj()
-        serializer = self.get_serializer(data=request.data, instance=obj, partial=True, context={'request': request})
+        serializer = self.change_serializer(request)(data=request.data, instance=obj, partial=True, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return response.Response(data=serializer.data, status=status.HTTP_200_OK)

@@ -26,6 +26,7 @@ class UserPasswordChangeSerializer(PasswordChangeSerializer):
     set_password_form_class = CustomSetPasswordForm
 
 
+
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True)
     confirm_password = serializers.CharField(write_only=True, required=True)
@@ -86,8 +87,41 @@ class RoleSerializer(serializers.ModelSerializer):
         exclude = ['id']
 
 
-class UserApiSerializer(serializers.ModelSerializer):
+class UserApi64Serializer(serializers.ModelSerializer):
     avatar = Base64ImageField(use_url=True, required=False)
+
+    class Meta:
+        model = User
+        exclude = ['last_login', 'is_superuser', 'is_staff', 'groups', 'user_permissions', 'is_active']
+
+    def validate_password(self, value: str):
+        if len(value) < 5:
+            raise ValidationError(detail={'psw': _('incorrect value')}, code=status.HTTP_400_BAD_REQUEST)
+        return value
+
+    def update(self, instance: User, validated_data):
+        password = validated_data.pop('password', None)
+
+        for field in validated_data.keys():
+
+            if field == 'email' and validated_data.get('email') != instance.email:
+                instance.username = validated_data.get('email')
+                email_address = EmailAddress.objects.get(user=instance)
+                email_address.email = validated_data.get('email')
+                email_address.save()
+
+            setattr(instance, field, validated_data.get(field))
+
+        if password:
+            instance.set_password(password)
+
+        instance.save()
+
+        return instance
+
+
+class UserApiSerializer(serializers.ModelSerializer):
+    avatar = serializers.ImageField()
 
     class Meta:
         model = User
