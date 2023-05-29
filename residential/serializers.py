@@ -62,7 +62,7 @@ class Residential64Serializer(serializers.ModelSerializer):
 
         for elem in validated_data.keys():
             setattr(instance, elem, validated_data.get(elem))
-        print(instance,'wwwwwwwwww')
+
         instance.save()
 
         if gallery:
@@ -263,11 +263,15 @@ class FlatApiSerializer(serializers.ModelSerializer):
         )
         announcement = Announcement.objects.create(confirm=True, flat=flat)
         announcement.save()
-        chess_board = ChessBoard.objects.get(residential_complex=self.context.get('residential_complex'),
+        try:
+            chess_board = ChessBoard.objects.get(residential_complex=self.context.get('residential_complex'),
                                     section=validated_data['section'], corps=validated_data['corps'])
+        except:
+            chess_board = False
+
         if chess_board:
             chess_board.flat.add(flat)
-        chess_board.save()
+            chess_board.save()
         if gallery:
             for elem in gallery:
                 photo = Photo.objects.create(
