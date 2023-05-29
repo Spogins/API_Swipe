@@ -13,7 +13,7 @@ class Announcement(models.Model):
 
 class Favorites(models.Model):
     announcement = models.ForeignKey(Announcement, on_delete=models.CASCADE)
-    residential_complex = models.ForeignKey(Complex, on_delete=models.CASCADE)
+    residential_complex = models.ForeignKey(Complex, on_delete=models.CASCADE, null=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
 
@@ -37,4 +37,9 @@ class Promotion(models.Model):
     colour = models.CharField(max_length=50, choices=ColourChoice.choices)
     announcement = models.ForeignKey(Announcement, on_delete=models.CASCADE)
 
+
+class AnnouncementRequest(models.Model):
+    announcement = models.ForeignKey(Announcement, on_delete=models.CASCADE, null=True)
+    chessboard = models.ForeignKey(ChessBoard, on_delete=models.CASCADE, null=True)
+    approve = models.BooleanField(default=False)
 

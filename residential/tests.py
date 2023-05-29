@@ -81,7 +81,7 @@ class ComplexTests(APITestCase):
         response_flat = self.client.post('/api/v1/flat/user/create/',
                                          data={
                                              "residential_complex": {
-                                                 "name":' 1'
+                                                 "name": ' 1'
                                              },
                                              "section": {
                                                  "name": '1'
@@ -112,3 +112,25 @@ class ComplexTests(APITestCase):
                                          format='json')
         print(response_flat)
         assert response_flat.status_code == status.HTTP_201_CREATED
+
+    # def test_promotion_type_creation(self):
+    #     self.client.credentials(HTTP_AUTHORIZATION=f'JWT {self.login_user("admin").get("access_token")}')
+    #     response = self.client.post('/api/v1/promotion-types/',
+    #                                 data={
+    #                                     'name': 'testing',
+    #                                     'price': 2.99,
+    #                                     'efficiency': 3
+    #                                 },
+    #                                 format='json')
+    #
+    #     assert response.status_code == status.HTTP_201_CREATED
+
+    # def test_announcement(self):
+    #     self.client.credentials(HTTP_AUTHORIZATION=f'JWT {self.login_user("admin").get("access_token")}')
+    #     response = self.client.post('/api/v1/announcement_approval/add-requests/',
+    #                                 data={
+    #                                     "announcement": 1
+    #                                 },
+    #                                 format='json')
+    #
+    #     assert response.status_code == status.HTTP_201_CREATED

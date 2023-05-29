@@ -1,7 +1,8 @@
 from rest_framework import serializers
-
-from announcements.models import Announcement, Favorites, Promotion
-from residential.models import Complex, Flat
+from rest_framework.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
+from announcements.models import *
+from residential.models import Complex, Flat, ChessBoard
 from residential.serializers import ResidentialListSerializer, FlatsInChessBoardApiSerializer
 
 
@@ -10,7 +11,7 @@ class AnnouncementApiSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Announcement
-        fields = ['confirm', 'flat']
+        fields = ['confirm', 'flat', 'id']
 
 
 class FavoriteAnnouncementApiSerializer(serializers.ModelSerializer):
@@ -49,3 +50,55 @@ class PromotionApiSerializer(serializers.ModelSerializer):
     class Meta:
         model = Promotion
         fields = '__all__'
+
+
+class AddRequestAnnouncement(serializers.ModelSerializer):
+    class Meta:
+        model = AnnouncementRequest
+        fields = ['announcement']
+
+
+    def create(self, validated_data):
+
+        announcement = validated_data['announcement']
+
+        try:
+            chessboard = ChessBoard.objects.get(corps=announcement.flat.corps, residential_complex=announcement.flat.residential_complex, section=announcement.flat.section)
+        except:
+            chessboard = ChessBoard.objects.create(corps=announcement.flat.corps, residential_complex=announcement.flat.residential_complex, section=announcement.flat.section)
+
+
+        if not AnnouncementRequest.objects.get(announcement=announcement):
+            announcement_request = AnnouncementRequest.objects.create(
+                announcement=announcement,
+                chessboard=chessboard
+            )
+            announcement_request.save()
+        else:
+            raise ValidationError({'data': _('Запрос уже отправлен')})
+        # except (TypeError, IndexError):
+        #     raise ValidationError({'data': _('Такого обьявления не существует')})
+
+        return announcement_request
+
+
+class RequestAnnouncementSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AnnouncementRequest
+        fields = '__all__'
+
+
+# class ApproveRequestAnnouncementSerializer(serializers.ModelSerializer):
+#
+#     class Meta:
+#         model = AnnouncementRequest
+#         fields = '__all__'
+#
+#     def update(self, instance: AnnouncementRequest, validated_data):
+#         print(5555555555555555)
+#         chess_board = instance.chessboard
+#         chess_board.flat.add(instance.announcement.flat)
+#         chess_board.save()
+#         instance.approve = True
+#         instance.save()
+#         return instance

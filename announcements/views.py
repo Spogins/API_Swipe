@@ -6,7 +6,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from announcements.models import Announcement, Favorites, Promotion
-from announcements.serializers import AnnouncementApiSerializer, FavoritesApiSerializer, PromotionApiSerializer
+from announcements.serializers import *
 
 
 # Create your views here.
@@ -94,4 +94,52 @@ class PromotionView(PsqMixin, viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
     permission_classes = [permissions.AllowAny]
     queryset = Promotion.objects.all()
+
+
+@extend_schema(tags=['AnnouncementOnChessboard'])
+class AnnouncementOnChessboard(PsqMixin, viewsets.GenericViewSet):
+    http_method_names = ['get', 'post', 'patch', 'delete']
+    serializer_class = AddRequestAnnouncement
+
+    def get_object(self, *args, **kwargs):
+        try:
+            return AnnouncementRequest.objects.get(pk=self.kwargs.get(self.lookup_field))
+        except AnnouncementRequest.DoesNotExist:
+            raise ValidationError({'detail': _('Указаный запрос на ддобавление не сужествует')})
+
+    @action(methods=['POST'], detail=False, url_path='add-requests')
+    def create_req(self, request):
+        serializer = AddRequestAnnouncement(data=request.data, context={'request': request})
+
+        if serializer.is_valid():
+            serializer.save()
+            return response.Response(data=serializer.data, status=status.HTTP_201_CREATED)
+        return response.Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['GET'], detail=False, url_path='requests-list')
+    def requests_list(self, request):
+        obj = self.paginate_queryset(AnnouncementRequest.objects.filter(approve=False))
+        serializer = RequestAnnouncementSerializer(instance=obj, many=True)
+        return self.get_paginated_response(data=serializer.data)
+
+    @action(methods=['POST'], detail=True, url_path='approve-request')
+    def add_request(self, request, *args, **kwargs):
+        try:
+            obj = self.get_object()
+            chess_board = obj.chessboard
+            chess_board.flat.add(obj.announcement.flat)
+            chess_board.save()
+            obj.approve = True
+            obj.save()
+        # serializer = ApproveRequestAnnouncementSerializer(data=request.data, instance=obj, partial=True)
+            return response.Response(data={'detail': _('Обьявление добавленно в шахматку')}, status=status.HTTP_200_OK)
+        except:
+            return response.Response(data={'detail': _('Error')}, status=status.HTTP_400_BAD_REQUEST)
+
+
+    @action(methods=['DELETE'], detail=True, url_path='request/delete')
+    def delete_favorites(self, request, *args, **kwargs):
+        obj = self.get_object()
+        obj.delete()
+        return response.Response(data={'response': 'Obj удалён'}, status=status.HTTP_200_OK)
 

@@ -4,7 +4,9 @@ from drf_psq import PsqMixin, Rule
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, generics, decorators, permissions, response, status
 from rest_framework.decorators import action
+from rest_framework.generics import ListAPIView, DestroyAPIView, RetrieveAPIView
 from rest_framework.parsers import JSONParser, MultiPartParser
+from rest_framework.viewsets import GenericViewSet
 
 from residential.models import *
 from residential.serializers import *
@@ -601,3 +603,5 @@ class ChessBoardView(PsqMixin, generics.DestroyAPIView, viewsets.GenericViewSet)
         obj = self.get_user_obj()
         obj.delete()
         return response.Response(data={'response': 'Obj удалён'}, status=status.HTTP_200_OK)
+
+

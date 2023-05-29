@@ -263,15 +263,15 @@ class FlatApiSerializer(serializers.ModelSerializer):
         )
         announcement = Announcement.objects.create(confirm=True, flat=flat)
         announcement.save()
-        try:
-            chess_board = ChessBoard.objects.get(residential_complex=self.context.get('residential_complex'),
-                                    section=validated_data['section'], corps=validated_data['corps'])
-        except:
-            chess_board = False
-
-        if chess_board:
-            chess_board.flat.add(flat)
-            chess_board.save()
+        # try:
+        #     chess_board = ChessBoard.objects.get(residential_complex=self.context.get('residential_complex'),
+        #                             section=validated_data['section'], corps=validated_data['corps'])
+        # except:
+        #     chess_board = False
+        #
+        # if chess_board:
+        #     chess_board.flat.add(flat)
+        #     chess_board.save()
         if gallery:
             for elem in gallery:
                 photo = Photo.objects.create(
@@ -342,10 +342,10 @@ class ChessBoardApiSerializer(serializers.ModelSerializer):
         flat = validated_data.pop('flats', None)
         validated_data['residential_complex'] = self.context.get('residential_complex')
         chess_board = ChessBoard.objects.create(**validated_data)
-        flats = Flat.objects.filter(residential_complex=self.context.get('residential_complex'), section=validated_data['section'], corps=validated_data['corps'])
-        if flats:
-            for flat in flats:
-                chess_board.flat.add(flat)
+        # flats = Flat.objects.filter(residential_complex=self.context.get('residential_complex'), section=validated_data['section'], corps=validated_data['corps'])
+        # if flats:
+        #     for flat in flats:
+        #         chess_board.flat.add(flat)
         chess_board.save()
         return chess_board
 
