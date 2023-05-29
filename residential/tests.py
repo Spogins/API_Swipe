@@ -2,6 +2,7 @@ from django.urls import reverse
 from rest_framework.test import APITestCase
 from rest_framework import status
 
+from announcements.models import Announcement
 from users.tests import init_scripts, image
 
 
@@ -110,8 +111,22 @@ class ComplexTests(APITestCase):
                                              "planning": "studio-bathroom"
                                          },
                                          format='json')
-        print(response_flat)
+
         assert response_flat.status_code == status.HTTP_201_CREATED
+
+
+        announcement_post = self.client.post('/api/v1/announcement_approval/add-requests/',
+                                    data={
+                                        "announcement": 1
+                                    },
+                                    format='json')
+        print(announcement_post)
+        assert announcement_post.status_code == status.HTTP_201_CREATED
+
+        announcement_get = self.client.get('/api/v1/announcement_approval/requests-list/')
+        print(announcement_get)
+        assert announcement_get.status_code == status.HTTP_201_CREATED
+
 
     # def test_promotion_type_creation(self):
     #     self.client.credentials(HTTP_AUTHORIZATION=f'JWT {self.login_user("admin").get("access_token")}')
@@ -132,5 +147,5 @@ class ComplexTests(APITestCase):
     #                                     "announcement": 1
     #                                 },
     #                                 format='json')
-    #
+    #     print(response)
     #     assert response.status_code == status.HTTP_201_CREATED

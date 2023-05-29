@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from drf_psq import PsqMixin
+from drf_psq import PsqMixin, Rule
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, generics, permissions, response, status
 from rest_framework.decorators import action
@@ -7,6 +7,7 @@ from rest_framework.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from announcements.models import Announcement, Favorites, Promotion
 from announcements.serializers import *
+from users.permissions import IsAdminPermission, IsManagerPermission, IsBuilderPermission, IsOwnerPermission
 
 
 # Create your views here.
@@ -100,6 +101,15 @@ class PromotionView(PsqMixin, viewsets.ModelViewSet):
 class AnnouncementOnChessboard(PsqMixin, viewsets.GenericViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
     serializer_class = AddRequestAnnouncement
+
+    psq_rules = {
+        ('requests_list', 'add_request', 'delete_favorites'): [
+            Rule([IsAdminPermission]),
+            Rule([IsManagerPermission])
+        ],
+        'create_req':
+            [Rule([IsBuilderPermission, IsOwnerPermission, permissions.IsAuthenticated])]
+    }
 
     def get_object(self, *args, **kwargs):
         try:

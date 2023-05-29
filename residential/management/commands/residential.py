@@ -44,12 +44,7 @@ class Command(BaseCommand):
             print(f'{res_complex.name} corps{ct} created')
             floor = Floor.objects.create(name=f'{res_complex.name } floor{ct}', residential_complex=res_complex)
             print(f'{res_complex.name} floor{ct} created')
-            chess_board = ChessBoard.objects.create(
-                corps=corps,
-                section=section,
-                residential_complex=res_complex
-            )
-            print('chess_board created')
+
             for fl in range(3):
                 gallery = Gallery.objects.create(name='flat')
                 flat = Flat.objects.create(
@@ -72,7 +67,6 @@ class Command(BaseCommand):
                     gallery=gallery,
                 )
                 print('flat created')
-                chess_board.flat.add(flat)
                 print('add flat on chess_board')
                 announcement = Announcement.objects.create(confirm=True, flat=flat)
                 print('announcement created')

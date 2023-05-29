@@ -67,15 +67,21 @@ class AddRequestAnnouncement(serializers.ModelSerializer):
         except:
             chessboard = ChessBoard.objects.create(corps=announcement.flat.corps, residential_complex=announcement.flat.residential_complex, section=announcement.flat.section)
 
-
-        if not AnnouncementRequest.objects.get(announcement=announcement):
+        try:
+            if not AnnouncementRequest.objects.get(announcement=announcement):
+                announcement_request = AnnouncementRequest.objects.create(
+                    announcement=announcement,
+                    chessboard=chessboard
+                )
+                announcement_request.save()
+            else:
+                raise ValidationError({'data': _('Запрос уже отправлен')})
+        except:
             announcement_request = AnnouncementRequest.objects.create(
                 announcement=announcement,
                 chessboard=chessboard
             )
             announcement_request.save()
-        else:
-            raise ValidationError({'data': _('Запрос уже отправлен')})
         # except (TypeError, IndexError):
         #     raise ValidationError({'data': _('Такого обьявления не существует')})
 

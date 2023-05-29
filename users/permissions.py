@@ -80,12 +80,12 @@ class IsResidentialComplexOrFlatPhotoOwner(BasePermission):
 
     def has_object_permission(self, request, view, obj: Photo):
         try:
-            return request.user == obj.gallery.residentialcomplex.owner
+            return request.user == obj.gallery.residentialcomplex.user
         except ObjectDoesNotExist:
             pass
 
         try:
-            return request.user == obj.gallery.flat.residential_complex.owner
+            return request.user == obj.gallery.flat.residential_complex.user
         except ObjectDoesNotExist:
             return False
 
