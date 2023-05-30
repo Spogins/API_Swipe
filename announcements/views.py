@@ -108,7 +108,7 @@ class AnnouncementOnChessboard(PsqMixin, viewsets.GenericViewSet):
             Rule([IsManagerPermission])
         ],
         'create_req':
-            [Rule([IsBuilderPermission, IsOwnerPermission, permissions.IsAuthenticated])]
+            [Rule([IsBuilderPermission | IsAdminPermission | IsManagerPermission | IsOwnerPermission, permissions.IsAuthenticated])]
     }
 
     def get_object(self, *args, **kwargs):
