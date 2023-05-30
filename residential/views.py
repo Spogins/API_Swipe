@@ -459,6 +459,7 @@ class NewsView(PsqMixin, generics.ListCreateAPIView, generics.RetrieveUpdateAPIV
 
 @extend_schema(tags=['Flats'])
 class FlatView(PsqMixin, viewsets.ModelViewSet):
+    parser_classes = [JSONParser]
     serializer_class = FlatApiSerializer
     http_method_names = ['get', 'post', 'patch', 'delete']
     psq_rules = {
