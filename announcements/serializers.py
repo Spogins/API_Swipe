@@ -98,13 +98,6 @@ class RequestAnnouncementSerializer(serializers.ModelSerializer):
 #
 #     class Meta:
 #         model = AnnouncementRequest
-#         fields = '__all__'
+#         fields = ['id']
 #
-#     def update(self, instance: AnnouncementRequest, validated_data):
-#         print(5555555555555555)
-#         chess_board = instance.chessboard
-#         chess_board.flat.add(instance.announcement.flat)
-#         chess_board.save()
-#         instance.approve = True
-#         instance.save()
-#         return instance
+

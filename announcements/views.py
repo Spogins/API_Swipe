@@ -141,7 +141,6 @@ class AnnouncementOnChessboard(PsqMixin, viewsets.GenericViewSet):
             chess_board.save()
             obj.approve = True
             obj.save()
-        # serializer = ApproveRequestAnnouncementSerializer(data=request.data, instance=obj, partial=True)
             return response.Response(data={'detail': _('Обьявление добавленно в шахматку')}, status=status.HTTP_200_OK)
         except:
             return response.Response(data={'detail': _('Error')}, status=status.HTTP_400_BAD_REQUEST)

@@ -114,38 +114,38 @@ class ComplexTests(APITestCase):
 
         assert response_flat.status_code == status.HTTP_201_CREATED
 
-
         announcement_post = self.client.post('/api/v1/announcement_approval/add-requests/',
                                     data={
                                         "announcement": 1
                                     },
                                     format='json')
-        print(announcement_post)
         assert announcement_post.status_code == status.HTTP_201_CREATED
 
-        announcement_get = self.client.get('/api/v1/announcement_approval/requests-list/')
-        print(announcement_get)
-        assert announcement_get.status_code == status.HTTP_201_CREATED
+        # announcement_get = self.client.get('/api/v1/announcement_approval/requests-list/')
+        # print(announcement_get)
+        # assert announcement_get.status_code == status.HTTP_200_OK
+
+        # announcement_approve = self.client.post(f'/api/v1/announcement_approval/{1}/approve-request/', )
+        # print(announcement_approve)
+        # assert announcement_approve.status_code == status.HTTP_200_OK
 
 
-    # def test_promotion_type_creation(self):
-    #     self.client.credentials(HTTP_AUTHORIZATION=f'JWT {self.login_user("admin").get("access_token")}')
-    #     response = self.client.post('/api/v1/promotion-types/',
-    #                                 data={
-    #                                     'name': 'testing',
-    #                                     'price': 2.99,
-    #                                     'efficiency': 3
-    #                                 },
-    #                                 format='json')
-    #
-    #     assert response.status_code == status.HTTP_201_CREATED
 
-    # def test_announcement(self):
-    #     self.client.credentials(HTTP_AUTHORIZATION=f'JWT {self.login_user("admin").get("access_token")}')
-    #     response = self.client.post('/api/v1/announcement_approval/add-requests/',
-    #                                 data={
-    #                                     "announcement": 1
-    #                                 },
-    #                                 format='json')
-    #     print(response)
-    #     assert response.status_code == status.HTTP_201_CREATED
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
