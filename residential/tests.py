@@ -1,3 +1,5 @@
+import os
+
 from django.urls import reverse
 from rest_framework.test import APITestCase
 from rest_framework import status
@@ -5,6 +7,7 @@ from rest_framework import status
 from announcements.models import Announcement, AnnouncementRequest
 from files.models import Gallery
 from residential.models import Complex, Section, Corps, Floor, Flat, ChessBoard
+from swipe.settings import BASE_DIR
 from users.models import User
 from users.tests import init_scripts, image
 
@@ -304,3 +307,15 @@ class ComplexTests(APITestCase):
                                     },
                                     format='json')
         assert response.status_code == status.HTTP_201_CREATED
+
+    # def test_documents_creation(self):
+    #     obj = create_res_complex()
+    #     self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.login_user("builder").get("access_token")}')
+    #     response_creation = self.client.post(path='/api/v1/document/user/create/',
+    #                                          data={
+    #                                              'name': 'test',
+    #                                              'residential_complex': obj.id,
+    #                                              'document': os.path.join(BASE_DIR, 'files/test_document/test.txt')
+    #                                          })
+    #     print(response_creation)
+    #     assert response_creation.status_code == status.HTTP_201_CREATED

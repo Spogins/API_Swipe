@@ -290,7 +290,7 @@ class DocumentView(PsqMixin, generics.ListCreateAPIView, generics.RetrieveUpdate
         return queryset
 
     def get_own_documents_queryset(self):
-        queryset = Documents.objects.filter(residential_complex__owner=self.request.user)
+        queryset = Documents.objects.filter(residential_complex__user=self.request.user)
         return queryset
 
     def get_object(self):
@@ -303,7 +303,7 @@ class DocumentView(PsqMixin, generics.ListCreateAPIView, generics.RetrieveUpdate
 
     def get_residential_complex(self):
         try:
-            return Complex.objects.get(owner=self.request.user)
+            return Complex.objects.get(user=self.request.user)
         except Complex.DoesNotExist:
             raise ValidationError({'detail': _('У вас немає зареєстрованих ЖК.')})
 
@@ -364,7 +364,7 @@ class DocumentView(PsqMixin, generics.ListCreateAPIView, generics.RetrieveUpdate
     @action(methods=['DELETE'], detail=True, url_path='user/delete')
     def my_documents_delete(self, request, *args, **kwargs):
         obj: Documents = self.get_object()
-        if obj.residential_complex.owner != request.user:
+        if obj.residential_complex.user != request.user:
             raise ValidationError({'detail': _('У вас нет доступа.')},
                                   code=status.HTTP_403_FORBIDDEN)
         obj.delete()
@@ -390,7 +390,7 @@ class NewsView(PsqMixin, generics.ListCreateAPIView, generics.RetrieveUpdateAPIV
         return queryset
 
     def get_own_news_queryset(self):
-        queryset = News.objects.filter(residential_complex__owner=self.request.user)
+        queryset = News.objects.filter(residential_complex__user=self.request.user)
         return queryset
 
     def list(self, request, *args, **kwargs):
@@ -441,7 +441,7 @@ class NewsView(PsqMixin, generics.ListCreateAPIView, generics.RetrieveUpdateAPIV
     @action(methods=['PATCH'], detail=True, url_path='user/update')
     def my_news_update(self, request, *args, **kwargs):
         obj: News = self.get_object()
-        if obj.residential_complex.owner != request.user:
+        if obj.residential_complex.user != request.user:
             raise ValidationError({'detail': _('У вас нет доступа для обновления.')},
                                   code=status.HTTP_403_FORBIDDEN)
         serializer = self.get_serializer(data=request.data, instance=obj, partial=True)
