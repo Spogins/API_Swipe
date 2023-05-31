@@ -125,13 +125,13 @@ class UsersTest(APITestCase):
 
 
     def test_logout(self):
-        self.client.credentials(HTTP_AUTHORIZATION=f'JWT {self.login_user().get("access_token")}')
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.login_user().get("access_token")}')
         response = self.client.post('/api/auth/logout/')
         assert response.status_code == status.HTTP_200_OK
 
 
     def test_change_password(self):
-        self.client.credentials(HTTP_AUTHORIZATION=f'JWT {self.login_user("admin").get("access_token")}')
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.login_user("admin").get("access_token")}')
         response = self.client.post('/api/auth/password/change/', data={
             'new_password1': 'swipe5231',
             'new_password2': 'swipe5231'
@@ -140,7 +140,7 @@ class UsersTest(APITestCase):
 
     def test_blocking_and_unblocking_user(self):
         user_to_block = User.objects.get(role__role='user')
-        self.client.credentials(HTTP_AUTHORIZATION=f'JWT {self.login_user("admin").get("access_token")}')
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.login_user("admin").get("access_token")}')
         response = self.client.post(f'/api/v1/user/{user_to_block.id}/block/')
         assert response.status_code == status.HTTP_200_OK
 
@@ -148,7 +148,7 @@ class UsersTest(APITestCase):
         assert response.status_code == status.HTTP_200_OK
 
     def test_updating_self_account(self):
-        self.client.credentials(HTTP_AUTHORIZATION=f'JWT {self.login_user("admin").get("access_token")}')
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.login_user("admin").get("access_token")}')
 
         response = self.client.patch(path='/api/v1/user/profile/update/',
                                 data={
@@ -160,7 +160,7 @@ class UsersTest(APITestCase):
 
     def test_creation_and_deletion_user(self):
         role = Role.objects.get(role='user')
-        self.client.credentials(HTTP_AUTHORIZATION=f'JWT {self.login_user("admin").get("access_token")}')
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.login_user("admin").get("access_token")}')
 
         response = self.client.post(path='/api/v1/user/', data={
             "avatar": image,

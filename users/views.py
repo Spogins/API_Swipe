@@ -115,12 +115,12 @@ class NotaryView(PsqMixin, viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
     queryset = Notary.objects.all()
 
-    # psq_rules = {
-    #     ('list', 'create', 'retrieve', 'destroy'):
-    #         [Rule([IsAdminPermission]), Rule([IsManagerPermission])],
-    #     ('partial_update',):
-    #         [Rule([IsAdminPermission], NotaryApiSerializer), Rule([IsManagerPermission], NotaryApiSerializer)]
-    # }
+    psq_rules = {
+        ('list', 'create', 'retrieve', 'destroy'):
+            [Rule([IsAdminPermission]), Rule([IsManagerPermission])],
+        ('partial_update',):
+            [Rule([IsAdminPermission], NotaryApiSerializer), Rule([IsManagerPermission], NotaryApiSerializer)]
+    }
 
 
 @extend_schema(tags=['Messages'])

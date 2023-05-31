@@ -59,7 +59,7 @@ class Notary(models.Model):
     avatar = models.ImageField(upload_to='users/notary/avatar/', blank=True, null=True)
     name = models.CharField(max_length=20)
     surname = models.CharField(max_length=20)
-    phone = PhoneNumberField()
+    phone = models.IntegerField()
     email = models.EmailField()
 
 
