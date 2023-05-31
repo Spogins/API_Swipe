@@ -65,17 +65,20 @@ class Residential64Serializer(serializers.ModelSerializer):
 
         instance.save()
 
-        if gallery:
-            old_image = instance.gallery.photo_set.all()
-            for elem in old_image:
-                elem.delete()
+        try:
+            if gallery:
+                old_image = Photo.objects.filter(gallery=instance.gallery)
+                for elem in old_image:
+                    elem.delete()
 
-            for elem in gallery:
-                photo = Photo.objects.create(
-                    image=elem.get('image'),
-                    gallery=instance.gallery
-                )
-                photo.save()
+                for elem in gallery:
+                    photo = Photo.objects.create(
+                        image=elem.get('image'),
+                        gallery=instance.gallery
+                    )
+                    photo.save()
+        except:
+            return instance
 
         return instance
 
@@ -292,17 +295,20 @@ class FlatApiSerializer(serializers.ModelSerializer):
 
         instance.save()
 
-        if gallery:
-            old_image = instance.gallery.photo_set.all()
-            for elem in old_image:
-                elem.delete()
+        try:
+            if gallery:
+                old_image = Photo.objects.filter(gallery=instance.gallery)
+                for elem in old_image:
+                    elem.delete()
 
-            for elem in gallery:
-                photo = Photo.objects.create(
-                    image=elem.get('image'),
-                    gallery=instance.gallery
-                )
-                photo.save()
+                for elem in gallery:
+                    photo = Photo.objects.create(
+                        image=elem.get('image'),
+                        gallery=instance.gallery
+                    )
+                    photo.save()
+        except:
+            return instance
 
         return instance
 
