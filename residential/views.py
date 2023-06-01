@@ -450,7 +450,7 @@ class NewsView(PsqMixin, generics.ListCreateAPIView, generics.RetrieveUpdateAPIV
             return response.Response(data=serializer.data, status=status.HTTP_200_OK)
         return response.Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(methods=['DELETE'], detail=True, url_path='my/delete')
+    @action(methods=['DELETE'], detail=True, url_path='user/delete')
     def my_news_delete(self, request, *args, **kwargs):
         obj: News = self.get_object()
         obj.delete()
@@ -472,13 +472,20 @@ class FlatView(PsqMixin, viewsets.ModelViewSet):
         ('partial_update', 'destroy'): [
             Rule([IsAdminPermission]), Rule([IsManagerPermission])
         ],
-        'flat_user': [
+        ('flat_user', 'flat_user_detail'): [
             Rule([IsBuilderPermission, IsOwnerPermission], FlatApiSerializer)
         ],
         ('create_flat_user', 'update_flat_user', 'delete_flat_user'): [
             Rule([IsBuilderPermission, IsOwnerPermission])
         ]
     }
+
+
+    def get_object(self):
+        try:
+            return Flat.objects.get(pk=self.kwargs.get(self.lookup_field))
+        except:
+            raise ValidationError({'detail': _('Нет такой квартиры')})
 
 
     def get_queryset(self):
@@ -504,6 +511,12 @@ class FlatView(PsqMixin, viewsets.ModelViewSet):
         serializer = self.get_serializer(instance=obj, many=True)
         return self.get_paginated_response(data=serializer.data)
 
+    @action(methods=['GET'], detail=True, url_path='user/detail')
+    def flat_user_detail(self, request, *args, **kwargs):
+        obj = self.get_object()
+        serializer = self.get_serializer(instance=obj, many=False)
+        return response.Response(data=serializer.data, status=status.HTTP_200_OK)
+
     @action(methods=['POST'], detail=False, url_path='user/create')
     def create_flat_user(self, request, *args, **kwargs):
         residential_complex = self.get_residential_complex()
@@ -515,7 +528,7 @@ class FlatView(PsqMixin, viewsets.ModelViewSet):
 
     @action(methods=['PATCH'], detail=True, url_path='user/update')
     def update_flat_user(self, request, *args, **kwargs):
-        obj = self.get_user_obj()
+        obj = self.get_object()
         serializer = self.get_serializer(data=request.data, instance=obj, partial=True)
 
         if serializer.is_valid():
@@ -550,6 +563,13 @@ class ChessBoardView(PsqMixin, generics.DestroyAPIView, viewsets.GenericViewSet)
             Rule([IsBuilderPermission, IsOwnerPermission])
         ]
     }
+
+    def get_object(self):
+        try:
+            return ChessBoard.objects.get(pk=self.kwargs.get(self.lookup_field))
+        except:
+            raise ValidationError({'detail': _('Нет такой шахматки')})
+
 
     def get_queryset(self):
         queryset = ChessBoard.objects \
@@ -588,9 +608,9 @@ class ChessBoardView(PsqMixin, generics.DestroyAPIView, viewsets.GenericViewSet)
             return response.Response(data=serializer.data, status=status.HTTP_201_CREATED)
         return response.Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(methods=['PATCH'], detail=False, url_path='user/update')
+    @action(methods=['PATCH'], detail=True, url_path='user/update')
     def update_chessboard_user(self, request, *args, **kwargs):
-        obj = self.get_user_obj()
+        obj = self.get_object()
         serializer = self.get_serializer(data=request.data, instance=obj, partial=True)
 
         if serializer.is_valid():
@@ -599,9 +619,9 @@ class ChessBoardView(PsqMixin, generics.DestroyAPIView, viewsets.GenericViewSet)
         else:
             return response.Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(methods=['DELETE'], detail=False, url_path='user/delete')
+    @action(methods=['DELETE'], detail=True, url_path='user/delete')
     def delete_chessboard_user(self, request, *args, **kwargs):
-        obj = self.get_user_obj()
+        obj = self.get_object()
         obj.delete()
         return response.Response(data={'response': 'Obj удалён'}, status=status.HTTP_200_OK)
 
