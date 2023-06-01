@@ -130,8 +130,8 @@ class MessagesView(PsqMixin, generics.ListAPIView, generics.DestroyAPIView, view
         'send_to_manager': [
             Rule([IsUserPermission])
         ],
-        'create_messages': [
-            Rule([IsAdminPermission | IsManagerPermission])
+        ('create_messages', 'messages', 'delete_messages'): [
+            Rule([IsAdminPermission | IsManagerPermission | IsAuthenticated])
         ],
         ('retrieve',): [
             Rule([IsManagerPermission | IsAdminPermission | IsUserPermission], MessageApiSerializer)
@@ -164,7 +164,7 @@ class MessagesView(PsqMixin, generics.ListAPIView, generics.DestroyAPIView, view
 
     @action(methods=['DELETE'], detail=True, url_path='user/delete')
     def delete_messages(self, request, *args, **kwargs):
-        obj = self.get_queryset().filter(residential_complex__user=request.user)
+        obj = self.get_object()
         obj.delete()
         return response.Response(data={'response': 'Obj удалён'}, status=status.HTTP_200_OK)
 
