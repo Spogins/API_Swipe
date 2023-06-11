@@ -8,7 +8,9 @@ router.register(r'notary', NotaryView, basename='notary')
 router.register(r'messages', MessagesView, basename='messages')
 router.register(r'saved_filters', SavedFiltersView, basename='saved_filters')
 router.register(r'subscription', SubscriptionAPIViewSet, basename='subscription')
+router.register(r'check_email', UerEmailCheck, basename='check_email')
 
 urlpatterns = [
     path('', include(router.urls)),
+
 ]

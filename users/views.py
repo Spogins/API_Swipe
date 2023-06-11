@@ -6,8 +6,26 @@ from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import viewsets, permissions, response, status, generics
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, JSONParser
+from rest_framework.views import APIView
+
 from users.permissions import *
 from users.serializers import *
+
+
+
+class UerEmailCheck(viewsets.GenericViewSet):
+    serializer_class = UerEmailCheckSerializer
+    http_method_names = ['post']
+    @action(detail=False, methods=['POST'])
+    def check(self, request, *args, **kwargs):
+        email = request.data['email']
+        try:
+            if User.objects.get(email=email):
+                return response.Response(data={'check': True}, status=status.HTTP_200_OK)
+            else:
+                return response.Response(data={'check': False}, status=status.HTTP_200_OK)
+        except:
+            return response.Response(data={'check': False}, status=status.HTTP_200_OK)
 
 
 class ConfirmCongratulationView(TemplateResponseMixin, View):
