@@ -39,4 +39,4 @@ COPY . .
 
 
 # run entrypoint.sh
-ENTRYPOINT ["/usr/src/app/docker-entrypoint.sh"]
+#ENTRYPOINT ["/usr/src/app/docker-entrypoint.sh"]
