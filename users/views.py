@@ -7,10 +7,10 @@ from rest_framework import viewsets, permissions, response, status, generics
 from rest_framework.decorators import action
 from rest_framework.parsers import MultiPartParser, JSONParser
 from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from users.permissions import *
 from users.serializers import *
-
 
 
 class UerEmailCheck(viewsets.GenericViewSet):
@@ -82,10 +82,6 @@ class UserApiView(PsqMixin, generics.ListCreateAPIView, generics.DestroyAPIView,
             serializer.save()
             return response.Response(data=serializer.data, status=status.HTTP_201_CREATED)
         return response.Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-
-
 
 
     @action(detail=True, methods=['POST'])

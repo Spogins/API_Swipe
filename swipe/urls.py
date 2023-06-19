@@ -15,7 +15,7 @@ Including another URLconf
 """
 from allauth.account.views import ConfirmEmailView
 from dj_rest_auth.registration.views import RegisterView, VerifyEmailView, ResendEmailVerificationView
-from dj_rest_auth.views import LoginView, LogoutView, PasswordChangeView, PasswordResetView
+from dj_rest_auth.views import LoginView, LogoutView, PasswordChangeView, PasswordResetView, PasswordResetConfirmView
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
@@ -38,10 +38,14 @@ urlpatterns = [
     path('api/auth/verify-email/', VerifyEmailView.as_view(), name='account_email_verification_sent'),
     path('api/auth/confirm-email/<str:key>/', ConfirmEmailView.as_view(), name='account_confirm_email'),
     path('api/auth/confirmation-congratulations/', ConfirmCongratulationView.as_view(), name='confirm_congratulations'),
+
     path('api/auth/login/', LoginView.as_view(), name='account_login'),
     path('api/auth/logout/', LogoutView.as_view(), name='account_logout'),
+
     path('api/auth/password/change/', PasswordChangeView.as_view(), name='password_change'),
     path('api/auth/password-reset/', PasswordResetView.as_view(), name='password_reset'),
+    path('api/auth/password-reset/confirm/<uidb64>/<token>/', PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
+
     path('api/auth/resend-email/', ResendEmailVerificationView.as_view(), name='account_resend_email'),
     # DEBUG TOOLBAR
     path('__debug__/', include('debug_toolbar.urls')),

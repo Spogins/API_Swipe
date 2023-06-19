@@ -31,7 +31,6 @@ class UserPasswordChangeSerializer(PasswordChangeSerializer):
     set_password_form_class = CustomSetPasswordForm
 
 
-
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True)
     confirm_password = serializers.CharField(write_only=True, required=True)
