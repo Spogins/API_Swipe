@@ -4,7 +4,6 @@ services:
   web:
     build: .
     command: gunicorn swipe.wsgi:application --bind 0.0.0.0:8000
-    entrypoint: ./docker-entrypoint.sh
     volumes:
       - static_volume:/usr/src/app/static
       - media_volume:/usr/src/app/media
