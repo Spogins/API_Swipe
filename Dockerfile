@@ -19,7 +19,7 @@ ENV PYTHONUNBUFFERED 1
 
 # install psycopg2 dependencies
 RUN apt-get update  \
-    && apt-get install netcat -y  \
+    && apt-get install netcat-traditional -y  \
     && apt-get install -y postgresql-server-dev-all gcc python3-dev musl-dev
 
 # install dependencies
@@ -36,7 +36,8 @@ RUN ["chmod", "+x", "/usr/src/app/docker-entrypoint.sh"]
 # copy project
 COPY . .
 
-
+RUN sed -i 's/\r$//g'  $APP_HOME/docker-entrypoint.sh
+RUN chmod +x  $APP_HOME/docker-entrypoint.sh
 
 # run entrypoint.sh
 ENTRYPOINT ["/usr/src/app/docker-entrypoint.sh"]
